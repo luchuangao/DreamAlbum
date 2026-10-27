@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string></string>
+	</dict>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>用于浏览和整理手机照片、管理系统相册，并将精选图片保存为梦想画册。</string>
+	<key>NSCameraUsageDescription</key>
+	<string>用于直接拍摄梦想相册和成长记录的画面。</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>ZCOOLKuaiLe-Regular.ttf</string>
+	</array>
+</dict>
+</plist>

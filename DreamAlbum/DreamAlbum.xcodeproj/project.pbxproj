@@ -1,0 +1,848 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AABBCC100000000000000001 /* PhotoSortingReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBCC100000000000000002 /* PhotoSortingReminder.swift */; };
+		00B5EE78D0D0B24C2E9AB011 /* DailyPhotoInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B472E0D5E56C8830D98BE4E8 /* DailyPhotoInboxView.swift */; };
+		0B0A5EB92192593D459DC3BC /* PhotoLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D1C592D9687CD9BA7D3138 /* PhotoLibraryTests.swift */; };
+		111111111111111111111101 /* DreamAlbumApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111001 /* DreamAlbumApp.swift */; };
+		111111111111111111111102 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111002 /* RootView.swift */; };
+		111111111111111111111103 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111003 /* Models.swift */; };
+		111111111111111111111104 /* DreamStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111004 /* DreamStore.swift */; };
+		111111111111111111111105 /* AlbumHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111005 /* AlbumHomeView.swift */; };
+		111111111111111111111106 /* DreamDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111006 /* DreamDetailView.swift */; };
+		111111111111111111111107 /* SharedViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111007 /* SharedViews.swift */; };
+		111111111111111111111108 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111008 /* SettingsView.swift */; };
+		111111111111111111111109 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111009 /* Assets.xcassets */; };
+		222222222222222222222101 /* completion_pulse.json in Resources */ = {isa = PBXBuildFile; fileRef = 222222222222222222222001 /* completion_pulse.json */; };
+		242D70AF7197FCF700C7B409 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 803604CB2D93E1B8ED222B56 /* Foundation.framework */; };
+		333333333333333333333101 /* ZCOOLKuaiLe-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 333333333333333333333001 /* ZCOOLKuaiLe-Regular.ttf */; };
+		7AB31E526986E80E3E853B94 /* NativePhotoGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 247FF38E3A4110EC1341BCB9 /* NativePhotoGrid.swift */; };
+		817D323B991603FA745DE7E0 /* PhotoCountCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5710649F02DC74B6F1CA8A64 /* PhotoCountCalendar.swift */; };
+		ABCDEF000000000000000001 /* DreamWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000005 /* DreamWidgetSnapshot.swift */; };
+		ABCDEF000000000000000002 /* DreamWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000005 /* DreamWidgetSnapshot.swift */; };
+		ABCDEF000000000000000003 /* DreamAlbumWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000007 /* DreamAlbumWidget.swift */; };
+		ABCDEF000000000000000004 /* DreamAlbumWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000010 /* DreamAlbumWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		ABCDEF000000000000000022 /* ICloudDreamSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000023 /* ICloudDreamSync.swift */; };
+		ABCDEF200000000000000001 /* PhotoReviewSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF100000000000000001 /* PhotoReviewSession.swift */; };
+		ABCDEF200000000000000002 /* PhotoLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF100000000000000002 /* PhotoLibraryService.swift */; };
+		ABCDEF200000000000000003 /* PhotoLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF100000000000000003 /* PhotoLibraryStore.swift */; };
+		ABCDEF200000000000000004 /* PhotoLibraryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF100000000000000004 /* PhotoLibraryViews.swift */; };
+		ABCDEF200000000000000005 /* PhotoCollectionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF100000000000000005 /* PhotoCollectionViews.swift */; };
+		B78D7F127C43704C7D82A59B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 803604CB2D93E1B8ED222B56 /* Foundation.framework */; };
+		CEF08900D9AE9C0140B71C59 /* PhotoFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3117F281C37CD3C3C6DE9FC0 /* PhotoFlowTests.swift */; };
+		DCEFDD9F81DC677CC745E3CC /* NativePhotoZoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E73B41F37CB35507829EA5 /* NativePhotoZoom.swift */; };
+		E9C1D9532E7B2570C9E944ED /* DailyInboxFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E652CE18F26FB5CA15AA3D3 /* DailyInboxFixture.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		ABCDEF000000000000000017 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 111111111111111111111601 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ABCDEF000000000000000015;
+			remoteInfo = DreamAlbumWidget;
+		};
+		ABF46687E43C18795686A4B2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 111111111111111111111601 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 111111111111111111111401;
+			remoteInfo = DreamAlbum;
+		};
+		C45C9DE88AF5F8A1DFFFCC91 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 111111111111111111111601 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 111111111111111111111401;
+			remoteInfo = DreamAlbum;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		ABCDEF000000000000000016 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				ABCDEF000000000000000004 /* DreamAlbumWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		AABBCC100000000000000002 /* PhotoSortingReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoSortingReminder.swift; sourceTree = "<group>"; };
+		111111111111111111111001 /* DreamAlbumApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DreamAlbumApp.swift; sourceTree = "<group>"; };
+		111111111111111111111002 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		111111111111111111111003 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		111111111111111111111004 /* DreamStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DreamStore.swift; sourceTree = "<group>"; };
+		111111111111111111111005 /* AlbumHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumHomeView.swift; sourceTree = "<group>"; };
+		111111111111111111111006 /* DreamDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DreamDetailView.swift; sourceTree = "<group>"; };
+		111111111111111111111007 /* SharedViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedViews.swift; sourceTree = "<group>"; };
+		111111111111111111111008 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		111111111111111111111009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		111111111111111111111010 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		111111111111111111111011 /* DreamAlbum.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DreamAlbum.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		222222222222222222222001 /* completion_pulse.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = completion_pulse.json; sourceTree = "<group>"; };
+		247FF38E3A4110EC1341BCB9 /* NativePhotoGrid.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NativePhotoGrid.swift; sourceTree = "<group>"; };
+		3117F281C37CD3C3C6DE9FC0 /* PhotoFlowTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhotoFlowTests.swift; sourceTree = "<group>"; };
+		333333333333333333333001 /* ZCOOLKuaiLe-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Fonts/ZCOOLKuaiLe-Regular.ttf"; sourceTree = "<group>"; };
+		527DB786D8B97A0A26015D36 /* DreamAlbumTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DreamAlbumTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5710649F02DC74B6F1CA8A64 /* PhotoCountCalendar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhotoCountCalendar.swift; sourceTree = "<group>"; };
+		6E652CE18F26FB5CA15AA3D3 /* DailyInboxFixture.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DailyInboxFixture.swift; sourceTree = "<group>"; };
+		7B7EEAD1C9A7EAE40C5AA932 /* DreamAlbumUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DreamAlbumUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		803604CB2D93E1B8ED222B56 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		ABCDEF000000000000000005 /* DreamWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DreamWidgetSnapshot.swift; sourceTree = "<group>"; };
+		ABCDEF000000000000000006 /* DreamAlbum.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DreamAlbum.entitlements; sourceTree = "<group>"; };
+		ABCDEF000000000000000007 /* DreamAlbumWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DreamAlbumWidget.swift; sourceTree = "<group>"; };
+		ABCDEF000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		ABCDEF000000000000000009 /* DreamAlbumWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DreamAlbumWidget.entitlements; sourceTree = "<group>"; };
+		ABCDEF000000000000000010 /* DreamAlbumWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DreamAlbumWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		ABCDEF000000000000000023 /* ICloudDreamSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudDreamSync.swift; sourceTree = "<group>"; };
+		ABCDEF100000000000000001 /* PhotoReviewSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoReviewSession.swift; sourceTree = "<group>"; };
+		ABCDEF100000000000000002 /* PhotoLibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryService.swift; sourceTree = "<group>"; };
+		ABCDEF100000000000000003 /* PhotoLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryStore.swift; sourceTree = "<group>"; };
+		ABCDEF100000000000000004 /* PhotoLibraryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryViews.swift; sourceTree = "<group>"; };
+		ABCDEF100000000000000005 /* PhotoCollectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCollectionViews.swift; sourceTree = "<group>"; };
+		B472E0D5E56C8830D98BE4E8 /* DailyPhotoInboxView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DailyPhotoInboxView.swift; sourceTree = "<group>"; };
+		D0D1C592D9687CD9BA7D3138 /* PhotoLibraryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhotoLibraryTests.swift; sourceTree = "<group>"; };
+		D8E73B41F37CB35507829EA5 /* NativePhotoZoom.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NativePhotoZoom.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		111111111111111111111201 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2C8AD77E47AA10E5E2B0A14C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				242D70AF7197FCF700C7B409 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		487502EE980A6A42C33CFD70 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B78D7F127C43704C7D82A59B /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ABCDEF000000000000000012 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		111111111111111111111301 = {
+			isa = PBXGroup;
+			children = (
+				111111111111111111111302 /* DreamAlbum */,
+				ABCDEF000000000000000011 /* DreamAlbumWidget */,
+				111111111111111111111303 /* Products */,
+				8189DF804163C55AEB843AE8 /* Frameworks */,
+				BC027BC38D3B80F65C303E28 /* DreamAlbumTests */,
+				62AFA97B18F47780E6366804 /* DreamAlbumUITests */,
+			);
+			sourceTree = "<group>";
+		};
+		111111111111111111111302 /* DreamAlbum */ = {
+			isa = PBXGroup;
+			children = (
+				111111111111111111111001 /* DreamAlbumApp.swift */,
+				ABCDEF100000000000000005 /* PhotoCollectionViews.swift */,
+				ABCDEF100000000000000004 /* PhotoLibraryViews.swift */,
+				ABCDEF100000000000000003 /* PhotoLibraryStore.swift */,
+				ABCDEF100000000000000002 /* PhotoLibraryService.swift */,
+				ABCDEF100000000000000001 /* PhotoReviewSession.swift */,
+				111111111111111111111002 /* RootView.swift */,
+				111111111111111111111003 /* Models.swift */,
+				111111111111111111111004 /* DreamStore.swift */,
+				111111111111111111111005 /* AlbumHomeView.swift */,
+				111111111111111111111006 /* DreamDetailView.swift */,
+				111111111111111111111007 /* SharedViews.swift */,
+				111111111111111111111008 /* SettingsView.swift */,
+				AABBCC100000000000000002 /* PhotoSortingReminder.swift */,
+				ABCDEF000000000000000005 /* DreamWidgetSnapshot.swift */,
+				ABCDEF000000000000000023 /* ICloudDreamSync.swift */,
+				111111111111111111111009 /* Assets.xcassets */,
+				333333333333333333333001 /* ZCOOLKuaiLe-Regular.ttf */,
+				222222222222222222222001 /* completion_pulse.json */,
+				111111111111111111111010 /* Info.plist */,
+				ABCDEF000000000000000006 /* DreamAlbum.entitlements */,
+				247FF38E3A4110EC1341BCB9 /* NativePhotoGrid.swift */,
+				D8E73B41F37CB35507829EA5 /* NativePhotoZoom.swift */,
+				B472E0D5E56C8830D98BE4E8 /* DailyPhotoInboxView.swift */,
+				6E652CE18F26FB5CA15AA3D3 /* DailyInboxFixture.swift */,
+				5710649F02DC74B6F1CA8A64 /* PhotoCountCalendar.swift */,
+			);
+			path = DreamAlbum;
+			sourceTree = "<group>";
+		};
+		111111111111111111111303 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				111111111111111111111011 /* DreamAlbum.app */,
+				ABCDEF000000000000000010 /* DreamAlbumWidget.appex */,
+				527DB786D8B97A0A26015D36 /* DreamAlbumTests.xctest */,
+				7B7EEAD1C9A7EAE40C5AA932 /* DreamAlbumUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		62AFA97B18F47780E6366804 /* DreamAlbumUITests */ = {
+			isa = PBXGroup;
+			children = (
+				3117F281C37CD3C3C6DE9FC0 /* PhotoFlowTests.swift */,
+			);
+			name = DreamAlbumUITests;
+			path = DreamAlbumUITests;
+			sourceTree = "<group>";
+		};
+		8189DF804163C55AEB843AE8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B382A278F458ADD334FB0832 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		ABCDEF000000000000000011 /* DreamAlbumWidget */ = {
+			isa = PBXGroup;
+			children = (
+				ABCDEF000000000000000007 /* DreamAlbumWidget.swift */,
+				ABCDEF000000000000000008 /* Info.plist */,
+				ABCDEF000000000000000009 /* DreamAlbumWidget.entitlements */,
+			);
+			path = DreamAlbumWidget;
+			sourceTree = "<group>";
+		};
+		B382A278F458ADD334FB0832 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				803604CB2D93E1B8ED222B56 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		BC027BC38D3B80F65C303E28 /* DreamAlbumTests */ = {
+			isa = PBXGroup;
+			children = (
+				D0D1C592D9687CD9BA7D3138 /* PhotoLibraryTests.swift */,
+			);
+			name = DreamAlbumTests;
+			path = DreamAlbumTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		111111111111111111111401 /* DreamAlbum */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 111111111111111111111701 /* Build configuration list for PBXNativeTarget "DreamAlbum" */;
+			buildPhases = (
+				111111111111111111111501 /* Sources */,
+				111111111111111111111201 /* Frameworks */,
+				111111111111111111111502 /* Resources */,
+				ABCDEF000000000000000016 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				ABCDEF000000000000000018 /* PBXTargetDependency */,
+			);
+			name = DreamAlbum;
+			productName = DreamAlbum;
+			productReference = 111111111111111111111011 /* DreamAlbum.app */;
+			productType = "com.apple.product-type.application";
+		};
+		3F76BB31F5565C491B077A2D /* DreamAlbumUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ABEC1DED71CF561C090523B8 /* Build configuration list for PBXNativeTarget "DreamAlbumUITests" */;
+			buildPhases = (
+				3BD6CD114E5416B6E451FFB9 /* Sources */,
+				487502EE980A6A42C33CFD70 /* Frameworks */,
+				36446E4CBBFC774987DB4E37 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E005C975BB7DAE9603F6C48F /* PBXTargetDependency */,
+			);
+			name = DreamAlbumUITests;
+			productName = DreamAlbumUITests;
+			productReference = 7B7EEAD1C9A7EAE40C5AA932 /* DreamAlbumUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		673A381836A23EFAAD8AB118 /* DreamAlbumTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5BC1225E140E5477048CC3CF /* Build configuration list for PBXNativeTarget "DreamAlbumTests" */;
+			buildPhases = (
+				D6FB18AECC92C2EFB9F711CA /* Sources */,
+				2C8AD77E47AA10E5E2B0A14C /* Frameworks */,
+				AEA21E2577ACF4DE05ADF9D3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BBB4CC0318B0D865A20FC26C /* PBXTargetDependency */,
+			);
+			name = DreamAlbumTests;
+			productName = DreamAlbumTests;
+			productReference = 527DB786D8B97A0A26015D36 /* DreamAlbumTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		ABCDEF000000000000000015 /* DreamAlbumWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ABCDEF000000000000000019 /* Build configuration list for PBXNativeTarget "DreamAlbumWidget" */;
+			buildPhases = (
+				ABCDEF000000000000000013 /* Sources */,
+				ABCDEF000000000000000012 /* Frameworks */,
+				ABCDEF000000000000000014 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DreamAlbumWidget;
+			productName = DreamAlbumWidget;
+			productReference = ABCDEF000000000000000010 /* DreamAlbumWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		111111111111111111111601 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 2650;
+				TargetAttributes = {
+					111111111111111111111401 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					ABCDEF000000000000000015 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = 111111111111111111111702 /* Build configuration list for PBXProject "DreamAlbum" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = "zh-Hans";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				"zh-Hans",
+				en,
+				Base,
+			);
+			mainGroup = 111111111111111111111301;
+			productRefGroup = 111111111111111111111303 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				111111111111111111111401 /* DreamAlbum */,
+				ABCDEF000000000000000015 /* DreamAlbumWidget */,
+				673A381836A23EFAAD8AB118 /* DreamAlbumTests */,
+				3F76BB31F5565C491B077A2D /* DreamAlbumUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		111111111111111111111502 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				111111111111111111111109 /* Assets.xcassets in Resources */,
+				222222222222222222222101 /* completion_pulse.json in Resources */,
+				333333333333333333333101 /* ZCOOLKuaiLe-Regular.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		36446E4CBBFC774987DB4E37 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ABCDEF000000000000000014 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AEA21E2577ACF4DE05ADF9D3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		111111111111111111111501 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				111111111111111111111101 /* DreamAlbumApp.swift in Sources */,
+				ABCDEF200000000000000005 /* PhotoCollectionViews.swift in Sources */,
+				ABCDEF200000000000000004 /* PhotoLibraryViews.swift in Sources */,
+				ABCDEF200000000000000003 /* PhotoLibraryStore.swift in Sources */,
+				ABCDEF200000000000000002 /* PhotoLibraryService.swift in Sources */,
+				ABCDEF200000000000000001 /* PhotoReviewSession.swift in Sources */,
+				111111111111111111111102 /* RootView.swift in Sources */,
+				111111111111111111111103 /* Models.swift in Sources */,
+				111111111111111111111104 /* DreamStore.swift in Sources */,
+				ABCDEF000000000000000001 /* DreamWidgetSnapshot.swift in Sources */,
+				ABCDEF000000000000000022 /* ICloudDreamSync.swift in Sources */,
+				111111111111111111111105 /* AlbumHomeView.swift in Sources */,
+				111111111111111111111106 /* DreamDetailView.swift in Sources */,
+				111111111111111111111107 /* SharedViews.swift in Sources */,
+				111111111111111111111108 /* SettingsView.swift in Sources */,
+				AABBCC100000000000000001 /* PhotoSortingReminder.swift in Sources */,
+				7AB31E526986E80E3E853B94 /* NativePhotoGrid.swift in Sources */,
+				DCEFDD9F81DC677CC745E3CC /* NativePhotoZoom.swift in Sources */,
+				00B5EE78D0D0B24C2E9AB011 /* DailyPhotoInboxView.swift in Sources */,
+				E9C1D9532E7B2570C9E944ED /* DailyInboxFixture.swift in Sources */,
+				817D323B991603FA745DE7E0 /* PhotoCountCalendar.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3BD6CD114E5416B6E451FFB9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CEF08900D9AE9C0140B71C59 /* PhotoFlowTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ABCDEF000000000000000013 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ABCDEF000000000000000002 /* DreamWidgetSnapshot.swift in Sources */,
+				ABCDEF000000000000000003 /* DreamAlbumWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D6FB18AECC92C2EFB9F711CA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0B0A5EB92192593D459DC3BC /* PhotoLibraryTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		ABCDEF000000000000000018 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ABCDEF000000000000000015 /* DreamAlbumWidget */;
+			targetProxy = ABCDEF000000000000000017 /* PBXContainerItemProxy */;
+		};
+		BBB4CC0318B0D865A20FC26C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = DreamAlbum;
+			target = 111111111111111111111401 /* DreamAlbum */;
+			targetProxy = C45C9DE88AF5F8A1DFFFCC91 /* PBXContainerItemProxy */;
+		};
+		E005C975BB7DAE9603F6C48F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = DreamAlbum;
+			target = 111111111111111111111401 /* DreamAlbum */;
+			targetProxy = ABF46687E43C18795686A4B2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		111111111111111111111801 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = VFDQL6Z55P;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		111111111111111111111802 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = VFDQL6Z55P;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		111111111111111111111803 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				"CODE_SIGNING_ALLOWED[sdk=macosx*]" = NO;
+				CODE_SIGN_ENTITLEMENTS = DreamAlbum/DreamAlbum.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 11;
+				DEVELOPMENT_ASSET_PATHS = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DreamAlbum/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "梦想相册";
+				INFOPLIST_KEY_NSSupportsLiveActivities = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.luchuangao.mengxiangxiangce;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,6";
+			};
+			name = Debug;
+		};
+		111111111111111111111804 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = DreamAlbum/DreamAlbum.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 11;
+				DEVELOPMENT_ASSET_PATHS = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DreamAlbum/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "梦想相册";
+				INFOPLIST_KEY_NSSupportsLiveActivities = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.luchuangao.mengxiangxiangce;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,6";
+			};
+			name = Release;
+		};
+		3F37D1366A442460CADB71D6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.luchuangao.mengxiangxiangce.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DreamAlbum.app/DreamAlbum";
+				"TEST_HOST[sdk=macosx*]" = "$(BUILT_PRODUCTS_DIR)/DreamAlbum.app/Contents/MacOS/DreamAlbum";
+			};
+			name = Debug;
+		};
+		6810B65E726B2F4360EA1820 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.luchuangao.mengxiangxiangce.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = DreamAlbum;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		6D41FCB5B62B0D17E58D828E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.luchuangao.mengxiangxiangce.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DreamAlbum.app/DreamAlbum";
+				"TEST_HOST[sdk=macosx*]" = "$(BUILT_PRODUCTS_DIR)/DreamAlbum.app/Contents/MacOS/DreamAlbum";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		ABCDEF000000000000000020 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				"CODE_SIGNING_ALLOWED[sdk=macosx*]" = NO;
+				CODE_SIGN_ENTITLEMENTS = DreamAlbumWidget/DreamAlbumWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 11;
+				DEVELOPMENT_TEAM = VFDQL6Z55P;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DreamAlbumWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.luchuangao.mengxiangxiangce.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,6";
+			};
+			name = Debug;
+		};
+		ABCDEF000000000000000021 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = DreamAlbumWidget/DreamAlbumWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 11;
+				DEVELOPMENT_TEAM = VFDQL6Z55P;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DreamAlbumWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.luchuangao.mengxiangxiangce.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,6";
+			};
+			name = Release;
+		};
+		D2829CB6D3FE92063D6C3EB8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.luchuangao.mengxiangxiangce.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = DreamAlbum;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		111111111111111111111701 /* Build configuration list for PBXNativeTarget "DreamAlbum" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				111111111111111111111803 /* Debug */,
+				111111111111111111111804 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		111111111111111111111702 /* Build configuration list for PBXProject "DreamAlbum" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				111111111111111111111801 /* Debug */,
+				111111111111111111111802 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5BC1225E140E5477048CC3CF /* Build configuration list for PBXNativeTarget "DreamAlbumTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6D41FCB5B62B0D17E58D828E /* Release */,
+				3F37D1366A442460CADB71D6 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ABCDEF000000000000000019 /* Build configuration list for PBXNativeTarget "DreamAlbumWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ABCDEF000000000000000020 /* Debug */,
+				ABCDEF000000000000000021 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ABEC1DED71CF561C090523B8 /* Build configuration list for PBXNativeTarget "DreamAlbumUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6810B65E726B2F4360EA1820 /* Release */,
+				D2829CB6D3FE92063D6C3EB8 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 111111111111111111111601 /* Project object */;
+}

@@ -1,0 +1,22 @@
+.DerivedData/
+.review/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+
+# Local build and validation output
+/.DerivedData*/
+/.Archive*/
+/.ui-checks/
+/build/
+*.xcresult/
+*.xcarchive/
+*.ipa
+*.dSYM/
+*.mobileprovision
+*.p12
+*.p8
+.env
+.env.*
+/AppStoreScreenshots/
+/ExportOptions*.plist
