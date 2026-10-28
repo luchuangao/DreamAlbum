@@ -181,3 +181,20 @@ Mac 链接器会提示本机 Metal toolchain 的一个 Swift 搜索目录不存�
 配对 iPhone 15 在本轮处于 unavailable 状态，安装尝试因找不到在线设备失败（`device-install.log` / `device-install.json`）。构建 13 尚未安装或启动到手机；签名构建成功不等同于安装成功。未卸载 App、清空数据或发布 App Store。
 
 本轮源码与验证摘要按 AGENTS.md 要求提交并同步 GitHub，保留远程历史；原始截图、测试包、设备回执、编译缓存均只留本机。
+
+
+## 2026-10-28 三款浅色主题与设置选择（构建 14）
+
+按用户选定的第一轮第 2 张及第二轮第 1、2 张效果图提供雾蓝晨光、冰蓝薄荷、蓝紫珍珠。默认雾蓝晨光。我的 → 偏好设置 → 背景主题提供三个渐变预览，点击即时切换背景、表面、主色、文字和进度颜色。选择由独立 AppStorage 键 `dream_album.appearance_theme.v1` 保存，未知值回退默认，不使用视图 id 重建页面，不写入 DreamStore、旧背景键或 iCloud 备份格式。
+
+SwiftUI 通过环境主题值驱动页面，UIKit 网格选中标记、加载失败重试和大图也接收当前配色。四个主页面、日历、筛选、导入、待删和画册编辑表单统一浅色，照片内容不着色。进度圆环轨道改为浅色可见，日历整理中的橙色加深以适应浅背景。旧画册、归档、成长记录及组件存储格式不变。
+
+- `.ui-checks/themes-v14/iphone.xcresult`：57 项现有单元全部通过，包括旧梦想数据解码、整理状态、服务失败和提醒。初轮双设备各 4 项 UI 中，页面审查、英文日历/完成态、分类范围与分组/画册/待删流程这 3 项通过；主题选择测试因自定义辅助功能元素未明确声明按钮角色而失败，未记为全通过。
+- 修复主题选项的按钮辅助功能角色后，`iphone-themes.xcresult`、`ipad-themes.xcresult` 各 1 项主题测试通过。覆盖三个主题逐一选择、当前勾选/名称、首页数量保留、跨照片/分组/画册页面显示以及重启后保持蓝紫珍珠。该修复与日历颜色、Mac 侧栏背景均已重新构建；没有改动已通过的业务模型。
+- 最终模拟器测试构建、自动签名 iOS 与 Mac Catalyst 构建成功：`build-accessibility.log`、`build-device-final.log`、`build-mac-final.log`。
+- 三款手机首页截图与所选参考按同一宽度并排比较，证据 `comparison-mistBlue.png`、`comparison-iceMint.png`、`comparison-bluePearl.png`；工具栏局部对照为 `toolbar-comparison-*.png`。最终主题截图在 `iphone-theme-shots/`、`ipad-theme-shots/`，既有页面和英文/待删/多选截图在 `iphone-shots/`、`ipad-shots/`。人工检查色彩、文字、布局、图片和文案，结果见 `design-qa.md`。
+- UI 使用隔离 Debug 图库和偏好重置入口，不重置普通用户设置，不执行真机原图删除。真实权限切换、iCloud 下载、万张图库性能和完整辅助功能验收仍不以本轮测试替代。
+
+版本 1.1（14）已通过 devicectl 覆盖安装到同一配对 iPhone 15，`device-install.json` 为 success；没有卸载或清空数据。自动启动因手机锁屏被拒绝，`device-launch.log` / `device-launch.json` 为 Locked，未宣称真机交互测试通过。解锁后可手动打开已安装的新版本。
+
+源码、选定生成图的压缩设计参考和验证摘要同步至 GitHub，保留历史；编译缓存、原始测试产物、设备数据、签名材料和用户照片不提交。未发布 App Store。

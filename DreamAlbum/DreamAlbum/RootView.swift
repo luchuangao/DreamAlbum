@@ -6,11 +6,15 @@ struct RootView: View {
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var sortingReminder: PhotoSortingReminder
     @Environment(\.scenePhase) private var phase
+    @AppStorage(AppTheme.storageKey) private var themeID = AppTheme.mistBlue.rawValue
+    private var theme: AppTheme { AppTheme.resolve(themeID) }
     var body: some View {
         MainTabView()
-            .tint(LibraryStyle.mint)
-            .preferredColorScheme(.dark)
-            .environment(\.albumBackgroundContrast, .dark)
+            .tint(theme.accent)
+            .foregroundStyle(theme.primary)
+            .preferredColorScheme(.light)
+            .environment(\.albumTheme, theme)
+            .environment(\.albumBackgroundContrast, .light)
             .task { sortingReminder.refresh(language: store.appLanguage) }
             .onChange(of: store.appLanguage) { _, value in sortingReminder.refresh(language: value) }
             .onAppear { store.isPremiumUnlocked = purchaseStore.isPremiumUnlocked }
@@ -35,6 +39,7 @@ extension EnvironmentValues {
 enum MainTab: Hashable { case photos, groups, home, me }
 
 struct MainTabView: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     @State private var selectedTab: MainTab = .photos
     @State private var photoHomeGeneration = 0
@@ -48,7 +53,8 @@ struct MainTabView: View {
                 sidebar(.groups, title: c("分组", "Albums"), icon: "folder")
                 sidebar(.home, title: c("梦想画册", "Dream albums"), icon: "book")
                 sidebar(.me, title: c("我的", "Me"), icon: "person.crop.circle")
-            }.navigationTitle(c("梦想相册", "Dream Album"))
+            }.scrollContentBackground(.hidden).background(AlbumBackground())
+                .navigationTitle(c("梦想相册", "Dream Album"))
         } detail: {
             switch selectedTab {
             case .photos: NavigationStack { DailyPhotoInboxView().libraryErrorAlert() }
@@ -71,9 +77,9 @@ struct MainTabView: View {
                 tab(.home, title: c("梦想画册", "Dream albums"), icon: "book", identifier: "tab.dreams")
                 tab(.me, title: c("我的", "Me"), icon: "person.crop.circle", identifier: "tab.me")
             }
-            .padding(.top, 8).background(LibraryStyle.background)
+            .padding(.top, 8).background(AlbumBackground())
             .overlay(alignment: .top) { Divider() }
-        }.background(LibraryStyle.background)
+        }.background(AlbumBackground())
         #endif
         }
         .environment(\.photoHomeGeneration, photoHomeGeneration)
@@ -97,7 +103,7 @@ struct MainTabView: View {
                 Text(title).font(.system(size: 10, weight: .medium)).lineLimit(1)
             }
             .frame(maxWidth: .infinity, minHeight: 48)
-            .foregroundStyle(selectedTab == tab ? LibraryStyle.mint : Color.gray)
+            .foregroundStyle(selectedTab == tab ? theme.accent : theme.secondary)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain).accessibilityIdentifier(identifier).accessibilityLabel(title)
@@ -106,7 +112,7 @@ struct MainTabView: View {
     private func sidebar(_ tab: MainTab, title: String, icon: String) -> some View {
         Button { selectedTab = tab } label: {
             Label(title, systemImage: icon).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 6)
-                .foregroundStyle(selectedTab == tab ? LibraryStyle.mint : .white)
+                .foregroundStyle(selectedTab == tab ? theme.accent : theme.primary)
         }.buttonStyle(.plain)
     }
 

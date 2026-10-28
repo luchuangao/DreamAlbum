@@ -2024,6 +2024,7 @@ private struct EmptyDreamState: View {
 }
 
 struct NewDreamSheet: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     @EnvironmentObject private var purchaseStore: PurchaseStore
     @Environment(\.dismiss) private var dismiss
@@ -2118,7 +2119,7 @@ struct NewDreamSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(LibraryStyle.background)
+            .background(AlbumBackground())
             .navigationTitle(copy("创建梦想相册", "Create Dream Album"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

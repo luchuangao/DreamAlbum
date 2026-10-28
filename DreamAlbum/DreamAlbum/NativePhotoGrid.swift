@@ -16,6 +16,7 @@ struct PhotoSelectionSweep {
 }
 
 struct NativePhotoGrid: UIViewRepresentable {
+    @Environment(\.albumTheme) private var theme
     let photos: [LibraryPhoto]
     let service: any PhotoLibraryService
     let pending: Set<String>
@@ -126,7 +127,7 @@ struct NativePhotoGrid: UIViewRepresentable {
             let photo = photos[index]
             cell.configure(photo: photo, service: parent.service, active: parent.active,
                            choosing: selectionMode, selected: parent.selection.contains(photo.id),
-                           pending: parent.pending.contains(photo.id), language: parent.language)
+                           pending: parent.pending.contains(photo.id), language: parent.language, theme: parent.theme)
             cell.accessibilityActivateAction = { [weak self] in self?.activate(index) }
         }
         func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
@@ -310,7 +311,7 @@ private final class PhotoGridCell: UICollectionViewCell {
     var accessibilityActivateAction: (() -> Void)?
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.backgroundColor = UIColor(LibraryStyle.surface)
+        contentView.backgroundColor = .clear
         photoView.contentMode = .scaleAspectFill
         photoView.clipsToBounds = true
         shade.backgroundColor = UIColor.black.withAlphaComponent(0.25)
@@ -338,7 +339,9 @@ private final class PhotoGridCell: UICollectionViewCell {
     }
     override var isSelected: Bool { didSet { setNeedsLayout() } }
     override var isHighlighted: Bool { didSet { photoView.alpha = isHighlighted ? 0.75 : 1 } }
-    func configure(photo: LibraryPhoto, service: any PhotoLibraryService, active: Bool, choosing: Bool, selected: Bool, pending: Bool, language: AppLanguage) {
+    func configure(photo: LibraryPhoto, service: any PhotoLibraryService, active: Bool, choosing: Bool, selected: Bool, pending: Bool, language: AppLanguage, theme: AppTheme) {
+        contentView.backgroundColor = UIColor(theme.surface)
+        retry.tintColor = UIColor(theme.accent)
         accessibilityIdentifier = "library.photo." + photo.id
         accessibilityLabel = AlbumCopy.pick(language, "照片", "Photo") + (photo.isLivePhoto ? " Live Photo" : "")
         accessibilityValue = selected ? AlbumCopy.pick(language, "已选择", "Selected") : nil
@@ -347,7 +350,7 @@ private final class PhotoGridCell: UICollectionViewCell {
         check.isHidden = !choosing
         shade.isHidden = !selected
         check.image = UIImage(systemName: selected ? "checkmark.circle.fill" : "circle", withConfiguration: UIImage.SymbolConfiguration(pointSize: 23, weight: .semibold))
-        check.tintColor = selected ? UIColor(LibraryStyle.mint) : .white
+        check.tintColor = selected ? UIColor(theme.accent) : .white
         check.layer.shadowColor = UIColor.black.cgColor
         check.layer.shadowOpacity = 0.6
         check.layer.shadowRadius = 2

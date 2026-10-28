@@ -9,11 +9,11 @@ enum PhotoDayReviewState: Hashable {
         case .complete: return "checkmark.circle.fill"
         }
     }
-    var color: Color {
+    func color(theme: AppTheme) -> Color {
         switch self {
         case .empty, .unreviewed: return .secondary
-        case .partial: return .orange
-        case .complete: return LibraryStyle.mint
+        case .partial: return Color(red: 0.68, green: 0.32, blue: 0.03)
+        case .complete: return theme.accent
         }
     }
     func label(_ language: AppLanguage) -> String {
@@ -76,6 +76,7 @@ enum PhotoCalendarNavigation {
 }
 
 struct PhotoCountCalendar: View {
+    @Environment(\.albumTheme) private var theme
     let assets: [LibraryPhoto]
     let language: AppLanguage
     let reviewed: Set<String>
@@ -122,14 +123,14 @@ struct PhotoCountCalendar: View {
                 }
                 HStack(spacing: 16) {
                     ForEach([PhotoDayReviewState.unreviewed, .partial, .complete], id: \.self) { state in
-                        Label(state.label(language), systemImage: state.symbol).foregroundStyle(state.color)
+                        Label(state.label(language), systemImage: state.symbol).foregroundStyle(state.color(theme: theme))
                             .font(.caption)
                     }
                 }.accessibilityIdentifier("calendar.legend")
                 if let day = model.days.first(where: { calendar.isDate($0.date, inSameDayAs: selection) }) {
                     VStack(spacing: 4) {
                         Text(c("已选 \(calendar.component(.month, from: selection))月\(calendar.component(.day, from: selection))日 · \(day.count) 张图片", "Selected \(selection.formatted(date: .abbreviated, time: .omitted)) · \(day.count) photos"))
-                        if day.count > 0 { Text(c("已整理 \(day.reviewedCount) 张", "\(day.reviewedCount) reviewed")).foregroundStyle(day.state.color) }
+                        if day.count > 0 { Text(c("已整理 \(day.reviewedCount) 张", "\(day.reviewedCount) reviewed")).foregroundStyle(day.state.color(theme: theme)) }
                     }.font(.subheadline).foregroundStyle(.secondary).accessibilityIdentifier("calendar.selection")
                 }
             }.frame(maxWidth: 600).padding(20).frame(maxWidth: .infinity)
@@ -137,7 +138,7 @@ struct PhotoCountCalendar: View {
         .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { value in
             if let offset = PhotoCalendarNavigation.offset(for: value.translation) { moveMonth(offset) }
         })
-        .background(LibraryStyle.background)
+        .background(AlbumBackground())
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
                 Divider()
@@ -151,13 +152,13 @@ struct PhotoCountCalendar: View {
                             .font(.subheadline.weight(.semibold)).frame(minHeight: 44)
                             .accessibilityIdentifier("calendar.restart")
                     }
-                }.foregroundStyle(LibraryStyle.mint).frame(maxWidth: 600).padding(.horizontal, 20).padding(.vertical, 8)
-            }.frame(maxWidth: .infinity).background(LibraryStyle.background)
+                }.foregroundStyle(theme.accent).frame(maxWidth: 600).padding(.horizontal, 20).padding(.vertical, 8)
+            }.frame(maxWidth: .infinity).background(AlbumBackground())
         }
         .sheet(isPresented: $showJump) {
             NavigationStack {
                 DatePicker(c("跳转日期", "Jump to date"), selection: $jumpDate, in: ...Date(), displayedComponents: .date)
-                    .datePickerStyle(.wheel).labelsHidden().padding().background(LibraryStyle.background)
+                    .datePickerStyle(.wheel).labelsHidden().padding().background(AlbumBackground())
                     .navigationTitle(c("跳转日期", "Jump to date")).navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) { Button(c("取消", "Cancel")) { showJump = false } }
@@ -179,13 +180,13 @@ struct PhotoCountCalendar: View {
             VStack(spacing: 3) {
                 Text("\(day.number)").font(.system(size: 19, weight: selected ? .semibold : .regular))
                     .frame(width: 34, height: 34)
-                    .foregroundStyle(selected ? LibraryStyle.background : (calendar.isDateInToday(day.date) ? LibraryStyle.mint : .primary))
-                    .background(selected ? LibraryStyle.mint : .clear, in: Circle())
+                    .foregroundStyle(selected ? theme.background : (calendar.isDateInToday(day.date) ? theme.accent : .primary))
+                    .background(selected ? theme.accent : .clear, in: Circle())
                 HStack(spacing: 2) {
                     if day.count > 0 && !future { Image(systemName: day.state.symbol).font(.system(size: 8, weight: .semibold)) }
                     Text(future ? " " : c("\(day.count)张", "\(day.count)"))
                         .monospacedDigit().lineLimit(1).minimumScaleFactor(0.65)
-                }.font(.caption2).foregroundStyle(day.state.color)
+                }.font(.caption2).foregroundStyle(day.state.color(theme: theme))
             }.frame(maxWidth: .infinity, minHeight: 62).contentShape(Rectangle())
         }
         .buttonStyle(.plain).disabled(future).opacity(future ? 0.3 : 1)

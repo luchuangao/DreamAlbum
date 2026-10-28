@@ -128,7 +128,8 @@ enum BackgroundImageAnalyzer {
 /// Background preferences remain decodable for old backups. All live screens
 /// use the same surface; an old custom image no longer changes page appearance.
 struct AlbumBackground: View {
-    var body: some View { LibraryStyle.background.ignoresSafeArea() }
+    @Environment(\.albumTheme) private var theme
+    var body: some View { theme.gradient.ignoresSafeArea() }
 }
 
 struct BackgroundReadabilityOverlay: View {
@@ -1347,6 +1348,7 @@ extension View {
 }
 
 struct DreamTitleEditorSheet: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     @Environment(\.dismiss) private var dismiss
     @State private var title: String
@@ -1373,7 +1375,7 @@ struct DreamTitleEditorSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(LibraryStyle.background)
+            .background(AlbumBackground())
             .navigationTitle(copy("修改名称", "Rename Album"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1444,6 +1446,7 @@ private struct LottiePlaybackView: View {
 #endif
 
 struct MoodChartSection: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     let scores: [(date: Date, score: Int)]
     private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
@@ -1455,11 +1458,11 @@ struct MoodChartSection: View {
                     Text(c("向上", "Up")); Spacer(); Text(c("平稳", "Steady")); Spacer(); Text(c("低谷", "Low"))
                 }.font(.caption2).foregroundStyle(.secondary).frame(height: 180)
                 ScrollView(.horizontal, showsIndicators: false) {
-                    MoodLineChart(scores: scores, tint: LibraryStyle.mint)
+                    MoodLineChart(scores: scores, tint: theme.accent)
                         .frame(width: max(CGFloat(scores.count) * 58, 260), height: 180)
                 }
             }
-        }.padding(18).background(LibraryStyle.surface, in: RoundedRectangle(cornerRadius: 22))
+        }.padding(18).background(theme.surface, in: RoundedRectangle(cornerRadius: 22))
     }
 }
 

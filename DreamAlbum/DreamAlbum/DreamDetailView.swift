@@ -43,6 +43,7 @@ private struct FullScreenImagePreview: View {
 }
 
 struct DreamDetailView: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     @Environment(\.dismiss) private var dismiss
     @State private var dream: Dream
@@ -75,8 +76,8 @@ struct DreamDetailView: View {
 
     // The live app has one appearance; legacy theme settings still decode.
     private var isBeachStyle: Bool { false }
-    private var detailSectionFill: AnyShapeStyle { AnyShapeStyle(LibraryStyle.surface) }
-    private var detailActionTint: Color { LibraryStyle.mint }
+    private var detailSectionFill: AnyShapeStyle { AnyShapeStyle(theme.surface) }
+    private var detailActionTint: Color { theme.accent }
 
     var body: some View {
         ZStack {
@@ -960,7 +961,7 @@ struct DreamDetailView: View {
             HStack(alignment: .center) {
                 Label(copy("梦想描述", "Vision"), systemImage: "sparkles")
                     .font(.headline)
-                    .foregroundStyle(LibraryStyle.mint)
+                    .foregroundStyle(theme.accent)
                 Spacer()
                 if !dream.isArchived {
                     Menu {
@@ -992,7 +993,7 @@ struct DreamDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
-        .background(LibraryStyle.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private var albumGallerySection: some View {
@@ -1013,8 +1014,8 @@ struct DreamDetailView: View {
                                 .labelStyle(.iconOnly)
                                 .font(.headline)
                                 .frame(width: 44, height: 44)
-                                .background(LibraryStyle.mint, in: Circle())
-                                .foregroundStyle(LibraryStyle.background)
+                                .background(theme.accent, in: Circle())
+                                .foregroundStyle(theme.background)
                         }
                         .onChange(of: selectedAlbumPhotos) { _, items in
                             Task { await importAlbumImages(from: items) }
@@ -1028,8 +1029,8 @@ struct DreamDetailView: View {
                                     .labelStyle(.iconOnly)
                                     .font(.headline)
                                     .frame(width: 44, height: 44)
-                                    .background(LibraryStyle.mint, in: Circle())
-                                    .foregroundStyle(LibraryStyle.background)
+                                    .background(theme.accent, in: Circle())
+                                    .foregroundStyle(theme.background)
                             }
                         }
                     }
@@ -1042,7 +1043,7 @@ struct DreamDetailView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(18)
-                    .background(LibraryStyle.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(theme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             } else {
                 LazyVGrid(columns: galleryColumns, spacing: 8) {
                     ForEach(dream.imagePaths, id: \.self) { path in
@@ -1086,7 +1087,7 @@ struct DreamDetailView: View {
             }
         }
         .padding(18)
-        .background(LibraryStyle.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private var galleryColumns: [GridItem] {
@@ -1103,7 +1104,7 @@ struct DreamDetailView: View {
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
-            .background(LibraryStyle.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var selectedRecordDate: Date {
@@ -1137,7 +1138,7 @@ struct DreamDetailView: View {
                 .padding(10)
                 .focused($isRecordFocused)
                 .scrollContentBackground(.hidden)
-                .background(LibraryStyle.background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(theme.background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(alignment: .topLeading) {
                     if recordText.isEmpty {
                         Text(copy("写下一条成长记录", "Write a growth record"))
@@ -1231,7 +1232,7 @@ struct DreamDetailView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .tint(detailActionTint)
-            .foregroundStyle(canSubmitRecord ? LibraryStyle.background : Color.secondary)
+            .foregroundStyle(canSubmitRecord ? theme.background : Color.secondary)
             .disabled(!canSubmitRecord)
         }
         .padding(18)
@@ -1273,13 +1274,13 @@ struct DreamDetailView: View {
                 TextField(copy("下一步计划", "Next step"), text: $newStageTitle)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 11)
-                    .background(LibraryStyle.background, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(theme.background, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 Button(action: addStage) {
                     Image(systemName: "plus")
                         .font(.headline)
                         .frame(width: 42, height: 42)
                         .background(detailActionTint, in: Circle())
-                        .foregroundStyle(LibraryStyle.background)
+                        .foregroundStyle(theme.background)
                 }
                 .disabled(newStageTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || dream.isArchived)
                 .opacity(newStageTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || dream.isArchived ? 0.45 : 1)
@@ -1347,12 +1348,12 @@ struct DreamDetailView: View {
                                 .font(.headline)
                                 .foregroundStyle(.secondary)
                                 .frame(width: 34, height: 34)
-                                .background(LibraryStyle.surface, in: Circle())
+                                .background(theme.surface, in: Circle())
                         }
                         .disabled(dream.isArchived)
                     }
                     .padding(12)
-                    .background(LibraryStyle.background, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .background(theme.background, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
             }
         }
@@ -1693,23 +1694,25 @@ struct DreamDetailView: View {
 }
 
 private struct MoodButtonStyle: ButtonStyle {
+    @Environment(\.albumTheme) private var theme
     let isSelected: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.subheadline.weight(.semibold))
             .padding(.vertical, 12)
-            .background(isSelected ? LibraryStyle.mint.opacity(0.18) : LibraryStyle.background, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .foregroundStyle(isSelected ? LibraryStyle.mint : .primary)
+            .background(isSelected ? theme.accent.opacity(0.18) : theme.background, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .foregroundStyle(isSelected ? theme.accent : .primary)
             .overlay {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isSelected ? LibraryStyle.mint.opacity(0.45) : Color.clear)
+                    .stroke(isSelected ? theme.accent.opacity(0.45) : Color.clear)
             }
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
     }
 }
 
 private struct PosterPreviewSheet: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     @Environment(\.dismiss) private var dismiss
     let image: UIImage
@@ -1718,7 +1721,7 @@ private struct PosterPreviewSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                LibraryStyle.background.ignoresSafeArea()
+                theme.background.ignoresSafeArea()
                 VStack(spacing: 18) {
                     ScrollView(.vertical, showsIndicators: false) {
                         Image(uiImage: image)
@@ -1738,8 +1741,8 @@ private struct PosterPreviewSheet: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(LibraryStyle.mint)
-                    .foregroundStyle(LibraryStyle.background)
+                    .tint(theme.accent)
+                    .foregroundStyle(theme.background)
                     .controlSize(.large)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 14)
@@ -1765,6 +1768,7 @@ private struct PosterPreviewSheet: View {
 }
 
 private struct DreamVisionEditorSheet: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     @Environment(\.dismiss) private var dismiss
     let onSave: (String) -> Void
@@ -1796,7 +1800,7 @@ private struct DreamVisionEditorSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(LibraryStyle.background)
+            .background(AlbumBackground())
             .navigationTitle(copy("编辑描述", "Edit Vision"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1819,6 +1823,7 @@ private struct DreamVisionEditorSheet: View {
 }
 
 private struct DreamLogEditorSheet: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     @Environment(\.dismiss) private var dismiss
     let originalLog: DreamLog
@@ -1917,7 +1922,7 @@ private struct DreamLogEditorSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(LibraryStyle.background)
+            .background(AlbumBackground())
             .navigationTitle(copy("编辑成长记录", "Edit Record"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1967,6 +1972,7 @@ private struct DreamLogEditorSheet: View {
 }
 
 private struct DreamStageEditorSheet: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     @Environment(\.dismiss) private var dismiss
     let originalStage: DreamStage
@@ -2010,7 +2016,7 @@ private struct DreamStageEditorSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(LibraryStyle.background)
+            .background(AlbumBackground())
             .navigationTitle(copy("编辑下一步", "Edit Next Step"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -2385,6 +2391,7 @@ private struct BeachTimelineCard: View {
 }
 
 private struct TimelineRow: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     let item: DreamTimelineItem
     var showConnector = true
@@ -2444,7 +2451,7 @@ private struct TimelineRow: View {
                 }
             }
             .padding(14)
-            .background(LibraryStyle.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(theme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .contextMenu {
                 if case .log(let log) = item {
                     Button {
@@ -2479,7 +2486,7 @@ private struct TimelineRow: View {
     private var dotColor: Color {
         switch item {
         case .log:
-            return LibraryStyle.mint
+            return theme.accent
         case .stage:
             return Color.softGold
         }
@@ -2491,7 +2498,7 @@ private struct TimelineRow: View {
         case .log(let log):
             Label(log.mood.title, systemImage: log.mood.symbol)
                 .font(.caption)
-                .foregroundStyle(log.mood == .positive ? LibraryStyle.mint : .secondary)
+                .foregroundStyle(log.mood == .positive ? theme.accent : .secondary)
         case .stage:
             Label(copy("下一步", "Next step"), systemImage: "flag.fill")
                 .font(.caption)

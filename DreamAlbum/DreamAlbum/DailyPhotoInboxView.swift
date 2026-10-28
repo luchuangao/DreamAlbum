@@ -88,6 +88,7 @@ struct PhotoInboxBatch {
 }
 
 struct DailyPhotoInboxView: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var store: DreamStore
     @Environment(\.scenePhase) private var scenePhase
@@ -132,7 +133,7 @@ struct DailyPhotoInboxView: View {
                 if library.hasAccess && !current.items.isEmpty { actionBar(current) }
             }
         }
-        .background(LibraryStyle.background)
+        .background(AlbumBackground())
         .navigationTitle(c("首页", "Home"))
         .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(isPresented: $showAllPhotos) { PhotoBrowserView(scopeIDs: browsingIDs, scopeTitle: browsingTitle).libraryErrorAlert() }
@@ -172,8 +173,8 @@ struct DailyPhotoInboxView: View {
             Label(c("全部照片", "All photos"), systemImage: "square.grid.2x2")
                 .font(.subheadline.weight(.medium)).fixedSize()
                 .padding(.horizontal, 10).frame(minHeight: 44)
-                .background(LibraryStyle.surface, in: Capsule())
-        }.buttonStyle(.plain).foregroundStyle(LibraryStyle.mint)
+                .background(theme.surface, in: Capsule())
+        }.buttonStyle(.plain).foregroundStyle(theme.accent)
             .accessibilityLabel(c("全部照片", "All photos")).accessibilityIdentifier("today.all")
     }
     private func dateButton(_ current: PhotoInboxBatch) -> some View {
@@ -185,7 +186,7 @@ struct DailyPhotoInboxView: View {
                     .accessibilityIdentifier("today.date")
                 Image(systemName: "chevron.down").font(.caption2.weight(.semibold))
             }.font(.subheadline).foregroundStyle(.primary).fixedSize().padding(.horizontal, 10).frame(minHeight: 44)
-                .background(LibraryStyle.surface, in: Capsule())
+                .background(theme.surface, in: Capsule())
         }.buttonStyle(.plain).accessibilityLabel(c("选择日期", "Choose date"))
             .accessibilityValue(displayedDate.map(dateLabel) ?? c("日期未知", "Undated"))
             .accessibilityIdentifier("today.calendar").disabled(!library.hasAccess)
@@ -197,8 +198,8 @@ struct DailyPhotoInboxView: View {
                 Text(c("待删", "Pending"))
                 Text("\(library.session.pendingDeletion.count)").monospacedDigit().fontWeight(.semibold)
             }.font(.subheadline).fixedSize().padding(.horizontal, 10).frame(minHeight: 44)
-                .background(LibraryStyle.surface, in: Capsule())
-        }.buttonStyle(.plain).foregroundStyle(LibraryStyle.mint)
+                .background(theme.surface, in: Capsule())
+        }.buttonStyle(.plain).foregroundStyle(theme.accent)
             .accessibilityLabel(c("待删 \(library.session.pendingDeletion.count)", "Pending \(library.session.pendingDeletion.count)"))
             .accessibilityIdentifier("today.pending")
     }
@@ -247,9 +248,9 @@ struct DailyPhotoInboxView: View {
     private func actionBar(_ current: PhotoInboxBatch) -> some View {
         return HStack(spacing: 12) {
             ZStack {
-                Circle().stroke(.white.opacity(0.12), lineWidth: 5)
+                Circle().stroke(theme.accent.opacity(0.14), lineWidth: 5)
                 Circle().trim(from: 0, to: current.progress)
-                    .stroke(LibraryStyle.mint, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    .stroke(theme.accent, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                     .rotationEffect(.degrees(-90))
             }.frame(width: 40, height: 40).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
@@ -264,17 +265,17 @@ struct DailyPhotoInboxView: View {
                     Text(c("继续整理", "Continue"))
                     Image(systemName: "arrow.right")
                 }.frame(minHeight: 44)
-            }.font(.subheadline.weight(.semibold)).foregroundStyle(LibraryStyle.mint)
+            }.font(.subheadline.weight(.semibold)).foregroundStyle(theme.accent)
                 .buttonStyle(.plain).accessibilityIdentifier("today.continue")
                 .accessibilityLabel(c("继续整理 \(current.items.count) 张", "Continue, \(current.items.count) items"))
         }
         .frame(maxWidth: 700).padding(.horizontal, 20).padding(.vertical, 10).frame(maxWidth: .infinity)
-        .background(LibraryStyle.background).overlay(alignment: .top) { Divider() }
+        .background(AlbumBackground()).overlay(alignment: .top) { Divider() }
     }
     private var emptyInbox: some View {
         let hasOtherPending = selectedDay != nil && library.photos.contains { !library.session.reviewed.contains($0.id) }
         return VStack(spacing: 16) {
-            Image(systemName: "checkmark.circle").font(.system(size: 52, weight: .light)).foregroundStyle(LibraryStyle.mint)
+            Image(systemName: "checkmark.circle").font(.system(size: 52, weight: .light)).foregroundStyle(theme.accent)
             Text(hasOtherPending ? c("此前已整理", "Earlier photos are sorted") : c("全部已整理", "All caught up")).font(.title2.bold()).accessibilityIdentifier("today.completed")
             Text(hasOtherPending ? c("可以继续整理最近的照片。", "Continue with your recent photos.") : c("新照片会出现在这里。", "New photos will appear here."))
                 .font(.subheadline).foregroundStyle(.secondary)

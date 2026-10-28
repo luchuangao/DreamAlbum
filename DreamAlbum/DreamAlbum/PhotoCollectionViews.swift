@@ -3,6 +3,7 @@ import Photos
 import ImageIO
 
 struct PhotoGroupsView: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var store: DreamStore
     @State private var newGroup = false
@@ -24,15 +25,15 @@ struct PhotoGroupsView: View {
                     Toggle(c("隐藏不可编辑分组", "Hide read-only albums"), isOn: $hideReadOnlyGroups)
                 } label: {
                     Image(systemName: "line.3.horizontal.decrease")
-                        .foregroundStyle(hideReadOnlyGroups ? LibraryStyle.mint : Color.secondary)
-                        .frame(width: 40, height: 40).background(LibraryStyle.surface, in: Circle())
+                        .foregroundStyle(hideReadOnlyGroups ? theme.accent : Color.secondary)
+                        .frame(width: 40, height: 40).background(theme.surface, in: Circle())
                         .frame(width: 44, height: 44).contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityLabel(c("筛选分组", "Filter albums"))
                     .accessibilityValue(hideReadOnlyGroups ? c("仅可编辑", "Editable only") : c("全部分组", "All albums"))
                     .accessibilityIdentifier("group.filters").disabled(!library.hasAccess)
                 Button { title = ""; newGroup = true } label: {
-                    Image(systemName: "plus").font(.title3.weight(.medium)).foregroundStyle(LibraryStyle.background)
-                        .frame(width: 40, height: 40).background(LibraryStyle.mint, in: Circle())
+                    Image(systemName: "plus").font(.title3.weight(.medium)).foregroundStyle(theme.background)
+                        .frame(width: 40, height: 40).background(theme.accent, in: Circle())
                         .frame(width: 44, height: 44).contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityLabel(c("新建分组", "New album"))
                     .disabled(!library.hasAccess || library.isChanging)
@@ -48,7 +49,7 @@ struct PhotoGroupsView: View {
                                 PhotoBrowserView(group: group).libraryErrorAlert()
                             } label: {
                                 HStack(spacing: 14) {
-                                    Image(systemName: group.canAdd ? "folder" : "rectangle.stack").font(.title2).foregroundStyle(LibraryStyle.mint).frame(width: 32)
+                                    Image(systemName: group.canAdd ? "folder" : "rectangle.stack").font(.title2).foregroundStyle(theme.accent).frame(width: 32)
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(group.title).font(.headline)
                                         Text(c("\(group.count) 张", "\(group.count) photos")).font(.caption).foregroundStyle(.secondary)
@@ -74,9 +75,9 @@ struct PhotoGroupsView: View {
                         .contextMenu { groupActions(group) }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             if group.canDelete { Button(c("仅删分组", "Album only"), role: .destructive) { delete(group) } }
-                            if group.canRename { Button(c("重命名", "Rename")) { title = group.title; editing = group }.tint(LibraryStyle.mint) }
+                            if group.canRename { Button(c("重命名", "Rename")) { title = group.title; editing = group }.tint(theme.accent) }
                         }
-                        .listRowBackground(LibraryStyle.surface).disabled(library.isChanging)
+                        .listRowBackground(theme.surface).disabled(library.isChanging)
                     }
                     if library.authorization == .limited {
                         Button(c("完整访问可查看其他相册", "Full access shows other albums")) { openPhotoSettings() }
@@ -84,7 +85,7 @@ struct PhotoGroupsView: View {
                 }.scrollContentBackground(.hidden).contentMargins(.top, 18, for: .scrollContent)
             }
         }
-        .background(LibraryStyle.background).navigationTitle("")
+        .background(AlbumBackground()).navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         .task { await library.activate() }
@@ -133,6 +134,7 @@ struct PhotoGroupsView: View {
 }
 
 struct GroupDestinationView: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var store: DreamStore
     @Environment(\.dismiss) private var dismiss
@@ -166,18 +168,19 @@ struct GroupDestinationView: View {
         .disabled(library.isChanging)
         .overlay { if library.isChanging { ProgressView().padding(24).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12)) } }
         .scrollContentBackground(.hidden)
-            .background(LibraryStyle.background)
+            .background(AlbumBackground())
             .navigationTitle(c("加入分组", "Add to album")).navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button(c("取消", "Cancel")) { dismiss() }.disabled(library.isChanging) }
             ToolbarItem(placement: .keyboard) { Button(c("完成", "Done")) { editingName = false } }
         }
         .interactiveDismissDisabled(library.isChanging)
-        .libraryErrorAlert().preferredColorScheme(.dark)
+        .libraryErrorAlert().preferredColorScheme(.light)
     }
 }
 
 struct DreamImportView: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var store: DreamStore
     @Environment(\.dismiss) private var dismiss
@@ -214,7 +217,7 @@ struct DreamImportView: View {
                     }
                     Text(c("已保存 \(importer.ready.count) / \(ids.count) 张", "Saved \(importer.ready.count) / \(ids.count)"))
                     if !importer.failed.isEmpty {
-                        Text(importer.error ?? c("部分图片保存失败", "Some images could not be saved")).font(.caption).foregroundStyle(LibraryStyle.coral)
+                        Text(importer.error ?? c("部分图片保存失败", "Some images could not be saved")).font(.caption).foregroundStyle(theme.destructive)
                         Button(c("重试失败的 \(importer.failed.count) 张", "Retry \(importer.failed.count) failed photos")) { importer.run(ids: importer.failed, service: library.service) }.disabled(importer.isRunning)
                     }
                     Button(c("加入梦想画册", "Add to dream album")) {
@@ -225,25 +228,26 @@ struct DreamImportView: View {
             }
         }
         .scrollContentBackground(.hidden)
-            .background(LibraryStyle.background)
+            .background(AlbumBackground())
             .navigationTitle(c("加入梦想画册", "Add to dream album")).navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button(c("取消", "Cancel")) { importer.close(); dismiss() } } }
         .onDisappear { importer.close() }
         .alert(c("画册已不可用", "Album unavailable"), isPresented: $commitFailed) {
             Button(c("好", "OK")) { }
         } message: { Text(c("请重新选择画册。", "Choose another album.")) }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
     }
 }
 
 private struct DreamCoverImage: View {
+    @Environment(\.albumTheme) private var theme
     @Environment(\.libraryScreenActive) private var screenActive
     let path: String?
     @State private var image: UIImage?
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                LibraryStyle.surface
+                theme.surface
                 if let image {
                     Image(uiImage: image).resizable().scaledToFill()
                         .frame(width: geometry.size.width, height: geometry.size.height).clipped()
@@ -272,6 +276,7 @@ private struct DreamCoverImage: View {
 }
 
 struct DreamGalleryView: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     @State private var newDream = false
     @State private var rename: Dream?
@@ -286,8 +291,8 @@ struct DreamGalleryView: View {
                         .font(.subheadline).foregroundStyle(.secondary)
                     Spacer()
                     Button { newDream = true } label: {
-                        Image(systemName: "plus").font(.title3.weight(.medium)).foregroundStyle(LibraryStyle.background)
-                            .frame(width: 40, height: 40).background(LibraryStyle.mint, in: Circle())
+                        Image(systemName: "plus").font(.title3.weight(.medium)).foregroundStyle(theme.background)
+                            .frame(width: 40, height: 40).background(theme.accent, in: Circle())
                     }.buttonStyle(.plain).accessibilityLabel(c("新建梦想画册", "New dream album"))
                 }
                 if store.activeDreams.isEmpty {
@@ -313,7 +318,7 @@ struct DreamGalleryView: View {
             .padding(.horizontal, 24).padding(.top, 8).padding(.bottom, 24)
             .frame(maxWidth: .infinity)
         }
-        .background(LibraryStyle.background).navigationTitle("")
+        .background(AlbumBackground()).navigationTitle("")
         .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(for: UUID.self) { id in
             if let dream = store.dreams.first(where: { $0.id == id }) { DreamDetailView(dream: dream).toolbar(.visible, for: .navigationBar) }
@@ -355,6 +360,7 @@ struct DreamGalleryView: View {
 }
 
 struct PhotoSettingsCard: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var store: DreamStore
     @State private var pending = false
@@ -374,7 +380,7 @@ struct PhotoSettingsCard: View {
             Button { review = true } label: { HStack { Label(c("继续整理", "Resume review"), systemImage: "arrow.left.arrow.right"); Spacer(); Text("\(library.session.completedCount) / \(library.session.queue.count)"); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary) }.frame(minHeight: 44).contentShape(Rectangle()) }
                 .disabled(library.session.queue.isEmpty || !library.hasAccess)
         }
-        .buttonStyle(.plain).font(.subheadline).foregroundStyle(.white).padding(18).background(LibraryStyle.surface, in: RoundedRectangle(cornerRadius: 20)).tint(LibraryStyle.mint)
+        .buttonStyle(.plain).font(.subheadline).foregroundStyle(theme.primary).padding(18).background(theme.surface, in: RoundedRectangle(cornerRadius: 20)).tint(theme.accent)
         .sheet(isPresented: $pending) { NavigationStack { PendingPhotosView() } }
         .fullScreenCover(isPresented: $review) { NavigationStack { PhotoReviewView() } }
     }

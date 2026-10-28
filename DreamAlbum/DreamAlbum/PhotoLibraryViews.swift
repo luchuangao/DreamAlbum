@@ -1,14 +1,6 @@
 import SwiftUI
 import Photos
 
-// The selected visual: matte dark surfaces, photographic content, quiet mint actions.
-enum LibraryStyle {
-    static let background = Color(red: 0.055, green: 0.063, blue: 0.067)
-    static let surface = Color(red: 0.105, green: 0.115, blue: 0.12)
-    static let mint = Color(red: 0.70, green: 0.86, blue: 0.79)
-    static let coral = Color(red: 0.91, green: 0.52, blue: 0.50)
-}
-
 private struct LibraryScreenActiveKey: EnvironmentKey { static let defaultValue = true }
 extension EnvironmentValues {
     var libraryScreenActive: Bool {
@@ -18,6 +10,7 @@ extension EnvironmentValues {
 }
 
 struct LibraryThumbnail: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var store: DreamStore
     @Environment(\.libraryScreenActive) private var screenActive
@@ -34,7 +27,7 @@ struct LibraryThumbnail: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                LibraryStyle.surface
+                theme.surface
                 if let image {
                     Image(uiImage: image).resizable()
                         .aspectRatio(contentMode: large || fit ? .fit : .fill)
@@ -124,6 +117,7 @@ private enum LibraryDestination: String, Identifiable {
 }
 
 struct PhotoBrowserView: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var store: DreamStore
     var group: LibraryGroup? = nil
@@ -181,11 +175,11 @@ struct PhotoBrowserView: View {
                 }
             }
         }
-        .background(LibraryStyle.background)
+        .background(AlbumBackground())
         .navigationTitle(browserTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
-        .toolbarBackground(LibraryStyle.background, for: .navigationBar)
+        .toolbarBackground(theme.background, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbar { browserToolbar }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -272,7 +266,7 @@ struct PhotoBrowserView: View {
                 Section(c("内容", "Content")) {
                     filterTypeRow(title: c("照片与截图", "Photos and screenshots"), icon: "photo.on.rectangle", screenshots: false)
                     filterTypeRow(title: c("仅屏幕截图", "Screenshots only"), icon: "viewfinder", screenshots: true)
-                }.listRowBackground(LibraryStyle.surface)
+                }.listRowBackground(theme.surface)
                 Section(c("日期", "Date")) {
                     NavigationLink {
                         PhotoMonthFilterView(months: months.map { (key: $0, title: monthLabel($0)) }, selection: $month, language: store.appLanguage)
@@ -284,7 +278,7 @@ struct PhotoBrowserView: View {
                                 .foregroundStyle(.secondary)
                         }.frame(minHeight: 32)
                     }.accessibilityIdentifier("filter.month")
-                }.listRowBackground(LibraryStyle.surface)
+                }.listRowBackground(theme.surface)
                 if onPick == nil {
                     Section {
                         Button {
@@ -292,14 +286,14 @@ struct PhotoBrowserView: View {
                         } label: {
                             Label(c("重新整理当前范围", "Review this scope again"), systemImage: "arrow.clockwise")
                                 .frame(minHeight: 32)
-                        }.foregroundStyle(LibraryStyle.mint).disabled(filtered.isEmpty)
+                        }.foregroundStyle(theme.accent).disabled(filtered.isEmpty)
                     } footer: {
                         Text(c("当前范围 \(filtered.count) 张", "\(filtered.count) photos in this scope"))
-                    }.listRowBackground(LibraryStyle.surface)
+                    }.listRowBackground(theme.surface)
                 }
             }
             .listStyle(.insetGrouped).scrollContentBackground(.hidden)
-            .background(LibraryStyle.background)
+            .background(AlbumBackground())
             .navigationTitle(c("筛选照片", "Filter photos")).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -321,7 +315,7 @@ struct PhotoBrowserView: View {
                 Text(title).foregroundStyle(.primary)
                 Spacer(minLength: 12)
                 if screenshotsOnly == screenshots {
-                    Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(LibraryStyle.mint)
+                    Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(theme.accent)
                 }
             }.frame(minHeight: 32).contentShape(Rectangle())
         }.buttonStyle(.plain)
@@ -367,7 +361,7 @@ struct PhotoBrowserView: View {
             }.accessibilityIdentifier("library.action.pending").disabled(selection.isEmpty)
         }
         .font(.subheadline).padding(20).frame(minHeight: 56)
-        .background(LibraryStyle.surface).disabled(library.isChanging)
+        .background(theme.surface).disabled(library.isChanging)
     }
     private func removeSelectionFromGroup() {
         guard let group else { return }
@@ -382,6 +376,7 @@ struct PhotoBrowserView: View {
 }
 
 private struct PhotoMonthFilterView: View {
+    @Environment(\.albumTheme) private var theme
     let months: [(key: String, title: String)]
     @Binding var selection: String
     let language: AppLanguage
@@ -391,12 +386,12 @@ private struct PhotoMonthFilterView: View {
             Section {
                 row(key: "", title: AlbumCopy.pick(language, "全部月份", "All months"))
                 ForEach(months, id: \.key) { month in row(key: month.key, title: month.title) }
-            }.listRowBackground(LibraryStyle.surface)
+            }.listRowBackground(theme.surface)
         }
         .listStyle(.insetGrouped).scrollContentBackground(.hidden)
-        .background(LibraryStyle.background)
+        .background(AlbumBackground())
         .navigationTitle(AlbumCopy.pick(language, "月份", "Month")).navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(LibraryStyle.background, for: .navigationBar)
+        .toolbarBackground(theme.background, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
     }
     private func row(key: String, title: String) -> some View {
@@ -404,13 +399,14 @@ private struct PhotoMonthFilterView: View {
             HStack {
                 Text(title).foregroundStyle(.primary)
                 Spacer()
-                if selection == key { Image(systemName: "checkmark").foregroundStyle(LibraryStyle.mint) }
+                if selection == key { Image(systemName: "checkmark").foregroundStyle(theme.accent) }
             }.frame(minHeight: 32).contentShape(Rectangle())
         }.buttonStyle(.plain).accessibilityAddTraits(selection == key ? .isSelected : [])
     }
 }
 
 struct PhotoPreview: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     @EnvironmentObject private var library: PhotoLibraryStore
     @Environment(\.dismiss) private var dismiss
@@ -442,7 +438,7 @@ struct PhotoPreview: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(LibraryStyle.background)
+            .background(AlbumBackground())
             .navigationTitle(photo?.isLivePhoto == true ? "Live Photo · " + c("静态预览", "Still preview") : c("照片", "Photo"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button(c("完成", "Done")) { dismiss() } } }
@@ -461,8 +457,8 @@ struct PhotoPreview: View {
                             else { decide(photo.id, delete: true) }
                         } label: { Label(photo.map { library.session.pendingDeletion.contains($0.id) } == true ? c("取消待删", "Unmark") : c("待删", "Pending"), systemImage: "tray") }
                             .disabled(!loaded).accessibilityIdentifier("preview.pending")
-                    }.font(.subheadline).padding(20).background(LibraryStyle.surface).disabled(photo == nil || swiping)
-                }.background(LibraryStyle.background)
+                    }.font(.subheadline).padding(20).background(theme.surface).disabled(photo == nil || swiping)
+                }.background(AlbumBackground())
             }
             .fullScreenCover(item: $destination) { destination in
                 if let photo { NavigationStack {
@@ -476,7 +472,7 @@ struct PhotoPreview: View {
         .onChange(of: photo?.id) { _, id in
             if id == nil && library.hasAccess { finish() }
         }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
     }
     private func advance(_ id: String) {
         guard photo?.id == id, let position = items.firstIndex(where: { $0.id == id }) else { swiping = false; return }
@@ -499,6 +495,7 @@ struct PhotoPreview: View {
 }
 
 struct PhotoReviewView: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var store: DreamStore
     @Environment(\.dismiss) private var dismiss
@@ -568,10 +565,10 @@ struct PhotoReviewView: View {
                 } label: { Label(c("加入分组", "Add to album"), systemImage: "folder") }.disabled(current == nil).accessibilityIdentifier("review.groups")
                 Spacer()
                 Button { showPending = true } label: { Label(c("待删 \(library.session.pendingDeletion.count)", "Pending \(library.session.pendingDeletion.count)"), systemImage: "tray") }
-                    .foregroundStyle(LibraryStyle.mint).frame(minHeight: 44).accessibilityIdentifier("review.pending")
+                    .foregroundStyle(theme.accent).frame(minHeight: 44).accessibilityIdentifier("review.pending")
             }.font(.subheadline).buttonStyle(.plain).padding(.horizontal, 24).frame(minHeight: 60).padding(.bottom, 4).disabled(exitingID != nil)
         }
-        .background(LibraryStyle.background).navigationTitle(c("整理照片", "Review photos")).navigationBarTitleDisplayMode(.inline)
+        .background(AlbumBackground()).navigationTitle(c("整理照片", "Review photos")).navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         .onDisappear {
             transitionTask?.cancel(); exitingID = nil; translation = .zero
@@ -596,7 +593,7 @@ struct PhotoReviewView: View {
             }.disabled(!loaded || exitingID != nil || showPending || destination != nil)
                 .frame(width: 0, height: 0).clipped().opacity(0).accessibilityHidden(true)
         }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
     }
     private func decide(_ id: String, delete: Bool) {
         guard loaded, exitingID == nil, current == id else { return }
@@ -621,6 +618,7 @@ struct PhotoReviewView: View {
 }
 
 struct PendingPhotosView: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var store: DreamStore
     @Environment(\.dismiss) private var dismiss
@@ -656,13 +654,13 @@ struct PendingPhotosView: View {
                     if library.isChanging { ProgressView() }
                     Text(c("删除 \(library.pendingPhotos.count) 张原图", "Delete \(library.pendingPhotos.count) originals"))
                 }.frame(maxWidth: .infinity, minHeight: 48)
-            }.buttonStyle(.bordered).tint(LibraryStyle.coral).padding(16).background(LibraryStyle.background)
+            }.buttonStyle(.bordered).tint(theme.destructive).padding(16).background(AlbumBackground())
                 .disabled(library.pendingPhotos.isEmpty || library.isChanging)
         }
         .alert(c("删除失败", "Deletion failed"), isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
             Button(c("好", "OK")) { deleteError = nil }
         } message: { Text(deleteError ?? "") }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
     }
 }
 

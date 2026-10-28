@@ -14,6 +14,7 @@ enum PhotoSwipeGesture {
 /// UIScrollView supplies the familiar pinch, double-tap and pan behavior,
 /// including centering a photo smaller than the available screen.
 struct NativePhotoZoom: UIViewRepresentable {
+    @Environment(\.albumTheme) private var theme
     let id: String
     let service: any PhotoLibraryService
     let language: AppLanguage
@@ -32,6 +33,7 @@ struct NativePhotoZoom: UIViewRepresentable {
         return view
     }
     func updateUIView(_ view: PhotoZoomScrollView, context: Context) {
+        view.retry.tintColor = UIColor(theme.accent)
         let coordinator = context.coordinator
         view.onSwipe = onSwipe
         view.onWillSwipe = onWillSwipe
@@ -142,7 +144,7 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate {
     private var fittedSize = CGSize.zero
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = UIColor(LibraryStyle.background)
+        backgroundColor = .clear
         minimumZoomScale = 1
         maximumZoomScale = 4
         showsHorizontalScrollIndicator = false
@@ -156,7 +158,7 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate {
         progress.font = .preferredFont(forTextStyle: .caption1)
         progress.textAlignment = .center
         retry.setImage(UIImage(systemName: "arrow.clockwise", withConfiguration: UIImage.SymbolConfiguration(pointSize: 26)), for: .normal)
-        retry.tintColor = UIColor(LibraryStyle.mint)
+        retry.tintColor = .tintColor
         retry.isHidden = true
         retry.addTarget(self, action: #selector(retryPhoto), for: .touchUpInside)
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(zoomPhoto(_:)))

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AABBCC140000000000000001 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBCC140000000000000002 /* AppTheme.swift */; };
 		AABBCC100000000000000001 /* PhotoSortingReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBCC100000000000000002 /* PhotoSortingReminder.swift */; };
 		00B5EE78D0D0B24C2E9AB011 /* DailyPhotoInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B472E0D5E56C8830D98BE4E8 /* DailyPhotoInboxView.swift */; };
 		0B0A5EB92192593D459DC3BC /* PhotoLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D1C592D9687CD9BA7D3138 /* PhotoLibraryTests.swift */; };
@@ -79,6 +80,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AABBCC140000000000000002 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		AABBCC100000000000000002 /* PhotoSortingReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoSortingReminder.swift; sourceTree = "<group>"; };
 		111111111111111111111001 /* DreamAlbumApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DreamAlbumApp.swift; sourceTree = "<group>"; };
 		111111111111111111111002 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -180,6 +182,7 @@
 				111111111111111111111007 /* SharedViews.swift */,
 				111111111111111111111008 /* SettingsView.swift */,
 				AABBCC100000000000000002 /* PhotoSortingReminder.swift */,
+				AABBCC140000000000000002 /* AppTheme.swift */,
 				ABCDEF000000000000000005 /* DreamWidgetSnapshot.swift */,
 				ABCDEF000000000000000023 /* ICloudDreamSync.swift */,
 				111111111111111111111009 /* Assets.xcassets */,
@@ -421,6 +424,7 @@
 				111111111111111111111107 /* SharedViews.swift in Sources */,
 				111111111111111111111108 /* SettingsView.swift in Sources */,
 				AABBCC100000000000000001 /* PhotoSortingReminder.swift in Sources */,
+				AABBCC140000000000000001 /* AppTheme.swift in Sources */,
 				7AB31E526986E80E3E853B94 /* NativePhotoGrid.swift in Sources */,
 				DCEFDD9F81DC677CC745E3CC /* NativePhotoZoom.swift in Sources */,
 				00B5EE78D0D0B24C2E9AB011 /* DailyPhotoInboxView.swift in Sources */,
@@ -605,7 +609,7 @@
 				"CODE_SIGNING_ALLOWED[sdk=macosx*]" = NO;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbum/DreamAlbum.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_ASSET_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DreamAlbum/Info.plist;
@@ -634,7 +638,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbum/DreamAlbum.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_ASSET_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DreamAlbum/Info.plist;
@@ -727,7 +731,7 @@
 				"CODE_SIGNING_ALLOWED[sdk=macosx*]" = NO;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbumWidget/DreamAlbumWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = VFDQL6Z55P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = DreamAlbumWidget/Info.plist;
@@ -756,7 +760,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbumWidget/DreamAlbumWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = VFDQL6Z55P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = DreamAlbumWidget/Info.plist;

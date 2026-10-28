@@ -3,6 +3,8 @@ import SwiftUI
 import UIKit
 
 struct SettingsView: View {
+    @Environment(\.albumTheme) private var theme
+    @AppStorage(AppTheme.storageKey) private var themeID = AppTheme.mistBlue.rawValue
     @EnvironmentObject private var store: DreamStore
     @EnvironmentObject private var purchaseStore: PurchaseStore
     @State private var isShowingPremium = false
@@ -28,10 +30,19 @@ struct SettingsView: View {
                         Spacer()
                         metric("\(totalImages)", copy("收藏画面", "Photos"))
                     }.padding(.vertical, 6)
-                }.listRowBackground(LibraryStyle.surface)
-                Section { PhotoSettingsCard().listRowInsets(EdgeInsets()).listRowBackground(LibraryStyle.surface) }
+                }.listRowBackground(theme.surface)
+                Section { PhotoSettingsCard().listRowInsets(EdgeInsets()).listRowBackground(theme.surface) }
                 PhotoSortingReminderSection()
                 Section(copy("偏好设置", "Preferences")) {
+                    NavigationLink {
+                        AppThemePicker()
+                    } label: {
+                        HStack {
+                            Text(copy("背景主题", "Background theme"))
+                            Spacer()
+                            Text(AppTheme.resolve(themeID).title(store.appLanguage)).foregroundStyle(.secondary)
+                        }
+                    }.accessibilityIdentifier("settings.theme")
                     Picker(copy("语言", "Language"), selection: $store.appLanguage) {
                         ForEach(AppLanguage.allCases) { Text($0.title).tag($0) }
                     }
@@ -39,14 +50,14 @@ struct SettingsView: View {
                         ForEach(TimelineDisplayStyle.allCases) { Text($0.title(language: store.appLanguage)).tag($0) }
                     }
                     Toggle(copy("显示心情曲线", "Show mood curve"), isOn: $store.isMoodChartEnabled)
-                }.listRowBackground(LibraryStyle.surface)
+                }.listRowBackground(theme.surface)
                 Section {
                     Toggle(copy("梦想提醒", "Dream reminder"), isOn: $store.isDailyReminderEnabled)
                     if store.isDailyReminderEnabled {
                         DatePicker(copy("提醒时间", "Reminder time"), selection: $store.dailyReminderTime, displayedComponents: .hourAndMinute)
                     }
                 } footer: { Text(copy("在当前设备提醒你回来看看梦想画面。", "A local reminder to revisit your dreams.")) }
-                    .listRowBackground(LibraryStyle.surface)
+                    .listRowBackground(theme.surface)
                 Section(copy("归档画册", "Archived albums")) {
                     if store.archivedDreams.isEmpty {
                         Text(copy("暂无归档画册", "No archived albums")).foregroundStyle(.secondary)
@@ -61,7 +72,7 @@ struct SettingsView: View {
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(copy("恢复", "Restore")) {
                                 if store.canCreateDream { store.restore(dream) } else { isShowingPremium = true }
-                            }.tint(LibraryStyle.mint)
+                            }.tint(theme.accent)
                         }
                         .contextMenu {
                             Button(copy("恢复", "Restore"), systemImage: "arrow.uturn.backward") {
@@ -69,16 +80,16 @@ struct SettingsView: View {
                             }
                         }
                     }
-                }.listRowBackground(LibraryStyle.surface)
+                }.listRowBackground(theme.surface)
                 Section {
                     Text(copy("画册图片独立保存，支持 iCloud 同步。整理进度仅保存在本机。", "Album images are independent copies with iCloud sync. Review progress stays on this device."))
                         .font(.footnote).foregroundStyle(.secondary)
-                }.listRowBackground(LibraryStyle.surface)
+                }.listRowBackground(theme.surface)
             }
             .listStyle(.insetGrouped)
             .contentMargins(.top, 8, for: .scrollContent)
             .scrollContentBackground(.hidden)
-            .background(LibraryStyle.background)
+            .background(AlbumBackground())
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
@@ -352,6 +363,7 @@ private struct TimelineStyleButton: View {
 }
 
 struct PremiumUnlockSheet: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     @EnvironmentObject private var purchaseStore: PurchaseStore
     @Environment(\.dismiss) private var dismiss
@@ -363,9 +375,9 @@ struct PremiumUnlockSheet: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Image(systemName: "crown.fill")
                             .font(.system(size: 30, weight: .black))
-                            .foregroundStyle(LibraryStyle.mint)
+                            .foregroundStyle(theme.accent)
                             .frame(width: 58, height: 58)
-                            .background(LibraryStyle.mint.opacity(0.14), in: Circle())
+                            .background(theme.accent.opacity(0.14), in: Circle())
 
                         Text(copy("解锁梦想相册 Pro", "Unlock Dream Album Pro"))
                             .font(.system(size: 30, weight: .black, design: .rounded))
@@ -386,10 +398,10 @@ struct PremiumUnlockSheet: View {
                     if purchaseStore.isPremiumUnlocked {
                         Label(copy("你已经解锁 Pro", "Pro is already unlocked"), systemImage: "checkmark.seal.fill")
                             .font(.headline.weight(.bold))
-                            .foregroundStyle(LibraryStyle.mint)
+                            .foregroundStyle(theme.accent)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(LibraryStyle.mint.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .background(theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     } else {
                         VStack(spacing: 10) {
                             Button {
@@ -412,8 +424,8 @@ struct PremiumUnlockSheet: View {
                                 .font(.headline.weight(.bold))
                                 .padding(.horizontal, 18)
                                 .padding(.vertical, 14)
-                                .background(LibraryStyle.mint, in: Capsule())
-                                .foregroundStyle(LibraryStyle.background)
+                                .background(theme.accent, in: Capsule())
+                                .foregroundStyle(theme.background)
                             }
                             .buttonStyle(.plain)
                             .disabled(purchaseStore.isLoading)
@@ -427,7 +439,7 @@ struct PremiumUnlockSheet: View {
                                 }
                             }
                             .font(.subheadline.weight(.bold))
-                            .foregroundStyle(LibraryStyle.mint)
+                            .foregroundStyle(theme.accent)
                             .buttonStyle(.plain)
 
                             if let message = purchaseStore.purchaseMessage {
@@ -463,6 +475,7 @@ struct PremiumUnlockSheet: View {
 }
 
 private struct PremiumFeatureRow: View {
+    @Environment(\.albumTheme) private var theme
     let symbol: String
     let title: String
     let subtitle: String
@@ -471,9 +484,9 @@ private struct PremiumFeatureRow: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: symbol)
                 .font(.headline.weight(.black))
-                .foregroundStyle(LibraryStyle.mint)
+                .foregroundStyle(theme.accent)
                 .frame(width: 36, height: 36)
-                .background(LibraryStyle.mint.opacity(0.12), in: Circle())
+                .background(theme.accent.opacity(0.12), in: Circle())
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
@@ -487,7 +500,7 @@ private struct PremiumFeatureRow: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(LibraryStyle.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 

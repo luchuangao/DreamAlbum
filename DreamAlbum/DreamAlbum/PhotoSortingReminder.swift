@@ -133,6 +133,7 @@ final class PhotoSortingReminder: ObservableObject {
 }
 
 struct PhotoSortingReminderSection: View {
+    @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
     @EnvironmentObject private var reminder: PhotoSortingReminder
     @Environment(\.scenePhase) private var phase
@@ -159,7 +160,7 @@ struct PhotoSortingReminderSection: View {
         } footer: {
             Text(reminder.authorization == .denied ? c("请在系统设置中允许通知。", "Allow notifications in system settings.") : c("每天提醒，默认 22:00。", "Daily reminder. Default: 10:00 PM."))
         }
-        .listRowBackground(LibraryStyle.surface)
+        .listRowBackground(theme.surface)
         .task { reminder.refresh(language: store.appLanguage) }
         .onChange(of: phase) { _, value in if value == .active { reminder.refresh(language: store.appLanguage) } }
         .onChange(of: store.appLanguage) { _, value in reminder.refresh(language: value) }

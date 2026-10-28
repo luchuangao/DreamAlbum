@@ -1,0 +1,118 @@
+import SwiftUI
+
+/// App appearance is a device preference, independent of dream data and backups.
+enum AppTheme: String, CaseIterable, Identifiable {
+    case mistBlue, iceMint, bluePearl
+    static let storageKey = "dream_album.appearance_theme.v1"
+    var id: String { rawValue }
+    static func resolve(_ value: String) -> AppTheme { AppTheme(rawValue: value) ?? .mistBlue }
+
+    func title(_ language: AppLanguage) -> String {
+        switch self {
+        case .mistBlue: return AlbumCopy.pick(language, "雾蓝晨光", "Morning Blue")
+        case .iceMint: return AlbumCopy.pick(language, "冰蓝薄荷", "Ice Mint")
+        case .bluePearl: return AlbumCopy.pick(language, "蓝紫珍珠", "Blue Pearl")
+        }
+    }
+    var background: Color {
+        switch self {
+        case .mistBlue: return Color(hex: 0xEEF5FC)
+        case .iceMint: return Color(hex: 0xEEF9FA)
+        case .bluePearl: return Color(hex: 0xF1F2FC)
+        }
+    }
+    var gradient: LinearGradient {
+        let colors: [Color]
+        switch self {
+        case .mistBlue: colors = [Color(hex: 0xEBF4FD), Color(hex: 0xF4F9FE), Color(hex: 0xECF5FD)]
+        case .iceMint: colors = [Color(hex: 0xE2F3FD), Color(hex: 0xF2FCFA), Color(hex: 0xE4F7F1)]
+        case .bluePearl: colors = [Color(hex: 0xE5EDFD), Color(hex: 0xF5F6FD), Color(hex: 0xEDE6FA)]
+        }
+        return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+    var surface: Color { .white.opacity(0.80) }
+    var primary: Color {
+        switch self {
+        case .mistBlue: return Color(hex: 0x233A58)
+        case .iceMint: return Color(hex: 0x203E49)
+        case .bluePearl: return Color(hex: 0x30334D)
+        }
+    }
+    var secondary: Color {
+        switch self {
+        case .mistBlue: return Color(hex: 0x65768D)
+        case .iceMint: return Color(hex: 0x5C777E)
+        case .bluePearl: return Color(hex: 0x71718B)
+        }
+    }
+    var accent: Color {
+        switch self {
+        case .mistBlue: return Color(hex: 0x2565AC)
+        case .iceMint: return Color(hex: 0x08778B)
+        case .bluePearl: return Color(hex: 0x565CBA)
+        }
+    }
+    var destructive: Color { Color(hex: 0xC13F43) }
+}
+
+private extension Color {
+    init(hex: UInt32) {
+        self.init(red: Double((hex >> 16) & 255) / 255,
+                  green: Double((hex >> 8) & 255) / 255,
+                  blue: Double(hex & 255) / 255)
+    }
+}
+
+private struct AppThemeKey: EnvironmentKey { static let defaultValue = AppTheme.mistBlue }
+extension EnvironmentValues {
+    var albumTheme: AppTheme {
+        get { self[AppThemeKey.self] }
+        set { self[AppThemeKey.self] = newValue }
+    }
+}
+
+struct AppThemePicker: View {
+    @EnvironmentObject private var store: DreamStore
+    @AppStorage(AppTheme.storageKey) private var themeID = AppTheme.mistBlue.rawValue
+    @Environment(\.albumTheme) private var theme
+    private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                ForEach(AppTheme.allCases) { option in
+                    Button { themeID = option.rawValue } label: {
+                        VStack(spacing: 0) {
+                            option.gradient.frame(height: 108)
+                                .overlay(alignment: .bottomLeading) {
+                                    Image(systemName: "photo.on.rectangle")
+                                        .font(.title2).foregroundStyle(option.accent).padding(16)
+                                }
+                            HStack {
+                                Text(option.title(store.appLanguage)).font(.headline).foregroundStyle(theme.primary)
+                                Spacer()
+                                Image(systemName: selected(option) ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(selected(option) ? theme.accent : theme.secondary.opacity(0.6))
+                            }.padding(16).background(theme.surface)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                        .overlay { RoundedRectangle(cornerRadius: 18).stroke(selected(option) ? theme.accent : .clear, lineWidth: 2) }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(option.title(store.appLanguage))
+                    .accessibilityValue(selected(option) ? c("已选择", "Selected") : c("未选择", "Not selected"))
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAddTraits(selected(option) ? .isSelected : [])
+                    .accessibilityIdentifier("theme.option." + option.rawValue)
+                }
+            }.frame(maxWidth: 600).padding(24).frame(maxWidth: .infinity)
+        }
+        .background(AlbumBackground())
+        .navigationTitle(c("背景主题", "Background theme"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbarBackground(theme.background, for: .navigationBar)
+    }
+    private func selected(_ option: AppTheme) -> Bool { AppTheme.resolve(themeID) == option }
+}

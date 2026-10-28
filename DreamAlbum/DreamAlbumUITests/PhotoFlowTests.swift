@@ -269,6 +269,35 @@ final class PhotoFlowTests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["library.photo.p0"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["library.selection.title"].label, "全部照片")
     }
+    func testThemeSelectionPersistsAcrossTabsAndRelaunch() {
+        launchDailyFixture()
+        let remaining = app.staticTexts["today.remaining"].label
+        for (id, name) in [("mistBlue", "雾蓝晨光"), ("iceMint", "冰蓝薄荷"), ("bluePearl", "蓝紫珍珠")] {
+            app.buttons["tab.me"].tap()
+            let row = app.buttons["settings.theme"]
+            for _ in 0..<4 where !row.isHittable { app.swipeUp() }
+            visibleButton("settings.theme").tap()
+            let option = visibleButton("theme.option." + id)
+            option.tap()
+            XCTAssertEqual(option.value as? String, "已选择")
+            capture("theme-picker-" + id)
+            goBack()
+            XCTAssertTrue(app.staticTexts[name].exists)
+            app.buttons["tab.photos"].tap()
+            XCTAssertEqual(app.staticTexts["today.remaining"].label, remaining)
+            capture("theme-home-" + id)
+            app.buttons["tab.groups"].tap(); capture("theme-groups-" + id)
+            app.buttons["tab.dreams"].tap(); capture("theme-dreams-" + id)
+        }
+        launchDailyFixture(reset: false)
+        app.buttons["tab.me"].tap()
+        let row = app.buttons["settings.theme"]
+        for _ in 0..<4 where !row.isHittable { app.swipeUp() }
+        visibleButton("settings.theme").tap()
+        XCTAssertEqual(visibleButton("theme.option.bluePearl").value as? String, "已选择")
+        XCTAssertEqual(visibleButton("theme.option.mistBlue").value as? String, "未选择")
+        capture("theme-relaunch-saved")
+    }
     func testReadOnlyGroupsCanHideAndRestoreWithPreferenceSaved() {
         launchDailyFixture()
         app.buttons["tab.groups"].tap()
