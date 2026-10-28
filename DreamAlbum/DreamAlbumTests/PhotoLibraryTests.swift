@@ -22,6 +22,10 @@ final class FakePhotoLibrary: PhotoLibraryService {
     var previewDelay: Duration = .zero
     var imageCancellations = 0
     var onImageRequest: ((String) -> Void)?
+    var liveRequests = 0
+    var liveDelay: Duration = .zero
+    var liveCancellations = 0
+    var onLiveRequest: (() -> Void)?
     var dataRequests = 0
     func preheat(ids: [String]) { }
     func requestAccess() async -> PHAuthorizationStatus { authorization }
@@ -41,6 +45,15 @@ final class FakePhotoLibrary: PhotoLibraryService {
         }
         if previewFailures.contains(id) { throw PhotoLibraryFailure.imageUnavailable }
         return UIImage(systemName: "photo")!
+    }
+    func livePhoto(id: String, size: CGSize) async throws -> PHLivePhoto {
+        liveRequests += 1
+        onLiveRequest?()
+        if liveDelay != .zero {
+            do { try await Task.sleep(for: liveDelay) }
+            catch { liveCancellations += 1; throw error }
+        }
+        throw PhotoLibraryFailure.imageUnavailable
     }
     func imageData(id: String, progress: @escaping (Double) -> Void) async throws -> Data {
         dataRequests += 1
@@ -502,6 +515,55 @@ final class PhotoSwipeGestureTests: XCTestCase {
 
 @MainActor
 final class PreviewLoadingTests: XCTestCase {
+    func testMotionFailureKeepsImageAndDecisionsUntouched() async {
+        let service = FakePhotoLibrary()
+        let loader = NativePhotoZoom.Coordinator(); loader.id = "a"
+        let view = PhotoZoomScrollView()
+        var swipes = 0; view.onSwipe = { _ in swipes += 1 }
+        loader.load(view, id: "a", service: service, isLivePhoto: true)
+        await loader.request?.value
+        await loader.liveRequest?.value
+        XCTAssertNotNil(view.photo.image); XCTAssertTrue(view.retry.isHidden)
+        XCTAssertNil(view.motion.livePhoto); XCTAssertEqual(swipes, 0)
+        XCTAssertEqual(service.liveRequests, 1)
+        view.onLiveRetry?(); await loader.liveRequest?.value
+        XCTAssertEqual(service.liveRequests, 2)
+        XCTAssertNotNil(view.photo.image)
+        loader.cancel()
+    }
+    func testSwitchingPhotoCancelsMotionAndDoesNotPrefetchMotion() async {
+        let service = FakePhotoLibrary(); service.liveDelay = .seconds(5)
+        let started = expectation(description: "motion started")
+        service.onLiveRequest = { started.fulfill() }
+        let loader = NativePhotoZoom.Coordinator(); loader.id = "a"
+        let view = PhotoZoomScrollView()
+        loader.load(view, id: "a", service: service, isLivePhoto: true)
+        await loader.request?.value
+        await fulfillment(of: [started], timeout: 2)
+        let motion = loader.liveRequest
+        await loader.preloadNext("b", service: service)?.value
+        XCTAssertEqual(service.liveRequests, 1)
+        loader.id = "b"; loader.load(view, id: "b", service: service)
+        await loader.request?.value; await motion?.value
+        XCTAssertEqual(service.liveCancellations, 1)
+        XCTAssertNotNil(view.photo.image); XCTAssertNil(view.motion.livePhoto)
+        XCTAssertNil(view.onLiveRetry)
+        loader.cancel()
+    }
+    func testClosingCancelsMotion() async {
+        let service = FakePhotoLibrary(); service.liveDelay = .seconds(5)
+        let started = expectation(description: "motion started")
+        service.onLiveRequest = { started.fulfill() }
+        let loader = NativePhotoZoom.Coordinator(); loader.id = "a"
+        let view = PhotoZoomScrollView()
+        loader.load(view, id: "a", service: service, isLivePhoto: true)
+        await loader.request?.value
+        await fulfillment(of: [started], timeout: 2)
+        loader.cancel(); await loader.liveRequest?.value
+        XCTAssertEqual(service.liveCancellations, 1)
+        view.resetPhoto()
+        XCTAssertNil(view.photo.image); XCTAssertNil(view.motion.livePhoto)
+    }
     func testOriginalRequestBypassesSmallerPrefetch() async {
         let service = FakePhotoLibrary()
         let loader = NativePhotoZoom.Coordinator()

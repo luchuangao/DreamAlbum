@@ -163,25 +163,16 @@ struct DailyPhotoInboxView: View {
                 pendingButton()
             }
             HStack(spacing: 6) {
-                dateButton(current)
-                Spacer(minLength: 0)
-                allPhotosButton(compact: true)
-                pendingButton()
-            }
-            HStack(spacing: 6) {
                 dateButton(current, compact: true).layoutPriority(1)
                 Spacer(minLength: 0)
-                allPhotosButton(compact: true)
+                allPhotosButton()
                 pendingButton(compact: true).layoutPriority(2)
             }
         }
     }
-    private func allPhotosButton(compact: Bool = false) -> some View {
+    private func allPhotosButton() -> some View {
         Button { openLibrary() } label: {
-            Group {
-                if compact { Image(systemName: "square.grid.2x2").frame(width: 28) }
-                else { Label(c("全部照片", "All photos"), systemImage: "square.grid.2x2") }
-            }
+            Image(systemName: "square.grid.2x2").frame(width: 28)
             .font(.subheadline.weight(.medium)).fixedSize()
             .padding(.horizontal, 8).frame(minWidth: 44, minHeight: 44)
             .background(theme.surface, in: Capsule())

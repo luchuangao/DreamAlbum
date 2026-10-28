@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import Photos
+import PhotosUI
 
 enum PhotoSwipeGesture {
     static func commits(translation: CGSize, velocity: CGSize = .zero, width: CGFloat) -> Bool {
@@ -20,10 +21,13 @@ struct NativePhotoZoom: UIViewRepresentable {
     let service: any PhotoLibraryService
     let language: AppLanguage
     var fullResolution = false
+    var isLivePhoto = false
     var nextID: String? = nil
+    var photoIdentifierPrefix = "preview.photo."
     var onWillSwipe: ((Bool) -> Bool)? = nil
     var onSwipe: ((Bool) -> Void)? = nil
     var onLoaded: ((Bool) -> Void)? = nil
+    var onTap: (() -> Void)? = nil
     func makeCoordinator() -> Coordinator { Coordinator() }
     func makeUIView(context: Context) -> PhotoZoomScrollView {
         let view = PhotoZoomScrollView()
@@ -42,17 +46,18 @@ struct NativePhotoZoom: UIViewRepresentable {
         let coordinator = context.coordinator
         view.onSwipe = onSwipe
         view.onWillSwipe = onWillSwipe
+        view.onTap = onTap
         view.onLoaded = onLoaded
         view.readyLabel = AlbumCopy.pick(language, "已加载", "Ready")
         view.loadingLabel = AlbumCopy.pick(language, "加载中", "Loading")
         view.transitionLabel = AlbumCopy.pick(language, "正在切换", "Changing")
-        view.photo.accessibilityIdentifier = "preview.photo." + id
+        view.photo.accessibilityIdentifier = photoIdentifierPrefix + id
         if coordinator.id != id || coordinator.targetSize != size {
             coordinator.id = id
-            coordinator.load(view, id: id, service: service, targetSize: size)
+            coordinator.load(view, id: id, service: service, targetSize: size, isLivePhoto: isLivePhoto)
             view.onRetry = { [weak view, weak coordinator] in
                 guard let view, let coordinator else { return }
-                coordinator.load(view, id: id, service: service, targetSize: size)
+                coordinator.load(view, id: id, service: service, targetSize: size, isLivePhoto: isLivePhoto)
             }
         }
         coordinator.preloadNext(fullResolution ? nil : nextID, service: service)
@@ -64,18 +69,21 @@ struct NativePhotoZoom: UIViewRepresentable {
         view.onWillSwipe = nil
         view.onSwipe = nil
         view.onLoaded = nil
+        view.onTap = nil
+        view.onLiveRetry = nil
         view.resetPhoto()
     }
     @MainActor final class Coordinator: NSObject, UIScrollViewDelegate {
         var id: String?
         var targetSize = CGSize.zero
+        var liveRequest: Task<Void, Never>?
         var request: Task<Void, Never>?
         private var upcomingID: String?
         private var preload: Task<Void, Never>?
         private var cached: (id: String, image: UIImage)?
         func cancel() {
             id = nil; upcomingID = nil
-            request?.cancel(); preload?.cancel(); cached = nil
+            request?.cancel(); liveRequest?.cancel(); preload?.cancel(); cached = nil
         }
         @discardableResult
         func preloadNext(_ next: String?, service: any PhotoLibraryService) -> Task<Void, Never>? {
@@ -95,11 +103,13 @@ struct NativePhotoZoom: UIViewRepresentable {
         }
         func viewForZooming(in scrollView: UIScrollView) -> UIView? { (scrollView as? PhotoZoomScrollView)?.photo }
         func scrollViewDidZoom(_ scrollView: UIScrollView) {
+            (scrollView as? PhotoZoomScrollView)?.stopLivePlayback()
             (scrollView as? PhotoZoomScrollView)?.centerPhoto()
             scrollView.accessibilityValue = "\(Int((scrollView.zoomScale * 100).rounded()))%"
         }
-        func load(_ view: PhotoZoomScrollView, id: String, service: any PhotoLibraryService, targetSize: CGSize = CGSize(width: 1600, height: 2000)) {
-            request?.cancel()
+        func load(_ view: PhotoZoomScrollView, id: String, service: any PhotoLibraryService, targetSize: CGSize = CGSize(width: 1600, height: 2000), isLivePhoto: Bool = false) {
+            request?.cancel(); liveRequest?.cancel()
+            view.onLiveRetry = nil
             self.targetSize = targetSize
             view.resetPhoto()
             view.retry.isHidden = true
@@ -120,6 +130,13 @@ struct NativePhotoZoom: UIViewRepresentable {
                     try Task.checkCancellation()
                     guard self?.id == id, let view else { return }
                     view.setPhoto(image)
+                    if isLivePhoto {
+                        view.onLiveRetry = { [weak self, weak view] in
+                            guard let self, let view else { return }
+                            self.loadLivePhoto(view, id: id, service: service)
+                        }
+                        self?.loadLivePhoto(view, id: id, service: service)
+                    }
                     view.spinner.stopAnimating()
                     view.progress.isHidden = true
                 } catch is CancellationError { }
@@ -131,14 +148,31 @@ struct NativePhotoZoom: UIViewRepresentable {
                 }
             }
         }
+        func loadLivePhoto(_ view: PhotoZoomScrollView, id: String, service: any PhotoLibraryService) {
+            guard self.id == id else { return }
+            liveRequest?.cancel()
+            // Motion is display-sized, current-photo only, independently cancellable.
+            liveRequest = Task { [weak self, weak view] in
+                do {
+                    let photo = try await service.livePhoto(id: id, size: CGSize(width: 1600, height: 2000))
+                    try Task.checkCancellation()
+                    guard self?.id == id else { return }
+                    view?.setLivePhoto(photo)
+                } catch { /* Keep the loaded image; holding again retries motion. */ }
+            }
+        }
+
     }
 }
 
-final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate {
+final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate, PHLivePhotoViewDelegate {
     let photo = UIImageView()
+    let motion = PHLivePhotoView()
     let spinner = UIActivityIndicatorView(style: .large)
     let progress = UILabel()
     let retry = UIButton(type: .system)
+    var onTap: (() -> Void)?
+    var onLiveRetry: (() -> Void)?
     var onRetry: (() -> Void)?
     var onSwipe: ((Bool) -> Void)?
     var onWillSwipe: ((Bool) -> Bool)?
@@ -146,9 +180,11 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate {
     var readyLabel = "Ready"
     var loadingLabel = "Loading"
     var transitionLabel = "Changing"
+    private var holdingLive = false
     private var reviewing = false
     private var transitioning = false
     private lazy var reviewPan = UIPanGestureRecognizer(target: self, action: #selector(swipePhoto(_:)))
+    private lazy var livePress = UILongPressGestureRecognizer(target: self, action: #selector(holdLivePhoto(_:)))
     private var fittedSize = CGSize.zero
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -161,6 +197,11 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate {
         photo.contentMode = .scaleAspectFit
         photo.isAccessibilityElement = true
         addSubview(photo)
+        motion.contentMode = .scaleAspectFit
+        motion.isUserInteractionEnabled = false
+        motion.isHidden = true
+        motion.delegate = self
+        addSubview(motion)
         [spinner, progress, retry].forEach(addSubview)
         progress.textColor = .secondaryLabel
         progress.font = .preferredFont(forTextStyle: .caption1)
@@ -172,6 +213,12 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate {
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(zoomPhoto(_:)))
         doubleTap.numberOfTapsRequired = 2
         addGestureRecognizer(doubleTap)
+        let singleTap = UITapGestureRecognizer(target: self, action: #selector(openPhoto))
+        singleTap.require(toFail: doubleTap)
+        addGestureRecognizer(singleTap)
+        livePress.minimumPressDuration = 0.3
+        livePress.delegate = self
+        addGestureRecognizer(livePress)
         reviewPan.maximumNumberOfTouches = 1
         reviewPan.delegate = self
         addGestureRecognizer(reviewPan)
@@ -188,6 +235,8 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate {
         reviewing = false
         setZoomScale(1, animated: false)
         transform = .identity
+        stopLivePlayback()
+        motion.livePhoto = nil
         photo.image = nil
         photo.accessibilityValue = loadingLabel
         onLoaded?(false)
@@ -198,6 +247,7 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate {
         onLoaded?(true)
     }
     override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if gestureRecognizer === livePress { return onLiveRetry != nil && photo.image != nil && zoomScale <= 1.01 && !transitioning }
         guard gestureRecognizer === reviewPan else { return super.gestureRecognizerShouldBegin(gestureRecognizer) }
         let velocity = reviewPan.velocity(in: self)
         return !transitioning && onSwipe != nil && photo.image != nil && zoomScale <= 1.01 && abs(velocity.x) > abs(velocity.y)
@@ -212,6 +262,7 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate {
         let translation = gesture.translation(in: superview)
         switch gesture.state {
         case .began, .changed:
+            stopLivePlayback()
             reviewing = true
             transform = CGAffineTransform(translationX: translation.x, y: 0)
         case .ended:
@@ -257,6 +308,7 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate {
             contentOffset = CGPoint(x: -contentInset.left, y: -contentInset.top)
         }
         centerPhoto()
+        motion.frame = photo.frame
         let center = CGPoint(x: bounds.midX, y: bounds.midY)
         spinner.center = center
         progress.frame = CGRect(x: center.x - 50, y: center.y + 30, width: 100, height: 30)
@@ -266,9 +318,42 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate {
         guard !reviewing else { return }
         contentInset = UIEdgeInsets(top: max(0, (bounds.height - photo.frame.height) / 2), left: max(0, (bounds.width - photo.frame.width) / 2), bottom: max(0, (bounds.height - photo.frame.height) / 2), right: max(0, (bounds.width - photo.frame.width) / 2))
     }
+    func setLivePhoto(_ livePhoto: PHLivePhoto) {
+        motion.livePhoto = livePhoto
+        if holdingLive { startLivePlayback() }
+    }
+    private func startLivePlayback() {
+        guard motion.livePhoto != nil, photo.image != nil, zoomScale <= 1.01, !transitioning else { return }
+        motion.frame = photo.frame
+        motion.isHidden = false
+        motion.startPlayback(with: .full)
+    }
+    func stopLivePlayback() {
+        holdingLive = false
+        motion.stopPlayback()
+        motion.isHidden = true
+    }
+    func livePhotoView(_ livePhotoView: PHLivePhotoView, didEndPlaybackWith playbackStyle: PHLivePhotoViewPlaybackStyle) {
+        motion.isHidden = true
+    }
+    @objc private func holdLivePhoto(_ gesture: UILongPressGestureRecognizer) {
+        switch gesture.state {
+        case .began:
+            holdingLive = true
+            if motion.livePhoto != nil { startLivePlayback() }
+            else { onLiveRetry?() }
+        case .ended, .cancelled, .failed: stopLivePlayback()
+        default: break
+        }
+    }
+    @objc private func openPhoto() {
+        guard photo.image != nil, !transitioning, zoomScale <= 1.01 else { return }
+        onTap?()
+    }
     @objc private func retryPhoto() { onRetry?() }
     @objc private func zoomPhoto(_ gesture: UITapGestureRecognizer) {
         guard photo.image != nil, !transitioning else { return }
+        stopLivePlayback()
         if zoomScale > 1.01 { setZoomScale(1, animated: true) }
         else {
             let point = gesture.location(in: photo)

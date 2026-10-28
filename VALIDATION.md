@@ -217,3 +217,18 @@ SwiftUI 通过环境主题值驱动页面，UIKit 网格选中标记、加载失
 - 视觉证据：`comparison-{mistBlue,iceMint,bluePearl}.png` 对照构建14/15；`management-comparison.png` 与局部图对照用户反馈和新管理页；双设备管理页/原图/首页截图人工检查，报告见 `design-qa.md`。用户截图、原始 UI 测试和设备数据只留 `.ui-checks/themes-v15/`。
 
 版本 1.1（15）已覆盖安装并成功启动到配对 iPhone 15，`device-install.json`、`device-launch.json` 均 success；未卸载、清空用户数据或执行真机照片删除。真机高像素原图内存、iCloud 原图下载、实际相机拍摄、权限切换和完整辅助功能仍需专项验收。未发布 App Store。源码与本摘要按 AGENTS.md 同步 GitHub，保留历史。
+
+
+## 2026-10-28 图片显示与主题操作栏（构建 16）
+
+首页全部照片统一为仅图标的 44pt 入口，保留中英文辅助功能名称。整理页复用全部照片的原生 UIScrollView 查看器，去掉白色卡片及额外内边距，保持完整比例，支持缩放、放大后平移、轻点原图、滑动判断与撤销。多选和预览底部操作栏沿用主题背景。移除“静态预览”标题文字。
+
+新增 PhotoKit 可取消的当前 Live Photo 加载与 PHLivePhotoView 长按播放；松手、缩放、切换停止。动态资源使用显示尺寸，不预取下一张动态内容；错误保留已加载图片，长按可重试。原图仍独立按最大尺寸请求；服务层、梦想副本、备份格式和系统删除流程保持原有边界。
+
+- `.ui-checks/photo-display-v16/iphone.xcresult`：63 项单元全通过，新增动态加载失败保留图片、切换取消/不预取动态、关闭取消共 3 项；原有旧数据、整理状态、服务失败、原图加载和提醒继续通过。
+- `iphone.xcresult`、`ipad.xcresult` 各 5 项 UI 通过：滑动/缩放平移、短滑回弹与撤销、原图返回同一照片且不误判断、13/1000 待删单行入口、整理完成返回首页。`*-themes.xcresult` 内各 1 项三主题图片/预览操作栏/多选操作栏场景通过。
+- 新增双语图标与 Live Photo 缺少动态资源的回退检查，首轮英文断言失败：测试只改系统语言而未覆盖 App 保存的中文偏好。显式设置测试的 App 语言后重建，最终 `iphone-language-final.xcresult`、`ipad-language-final.xcresult` 各 1 项通过，保留原失败结果。合计每种设备覆盖 7 个不同 UI 场景，不称为完整 UI 套件全量回归。
+- 最终模拟器测试构建 `build-final-tests.log`、签名 iOS `build-device.log`、Mac Catalyst `build-mac.log` 均成功；四处构建号均为 16，版本 1.1。
+- 已人工查看三主题双设备对比总览 `iphone-theme-shots-overview.png`、`ipad-theme-shots-overview.png` 和原图返回/预览截图：白色卡片与操作栏白底消失，保持完整图片和主题底色。中英文图标、Live Photo 标题截图在 `iphone-language-shots/`；视觉检查见 `design-qa.md`。
+
+版本 1.1（16）已覆盖安装且成功启动到配对 iPhone 15，`device-install.json` 和 `device-launch.json` 均 success。没有卸载、清空数据或执行手机原图删除。真实 Live Photo 动态播放、iCloud 动态下载、高清照片内存、权限切换及完整辅助功能仍需专项真机验收，模拟回退不能替代真实播放验证。源码与文档按 AGENTS.md 同步 GitHub，原始测试、截图、设备与签名信息不提交。未发布 App Store。

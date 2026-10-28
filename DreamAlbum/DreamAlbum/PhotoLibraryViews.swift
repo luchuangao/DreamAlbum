@@ -361,7 +361,7 @@ struct PhotoBrowserView: View {
             }.accessibilityIdentifier("library.action.pending").disabled(selection.isEmpty)
         }
         .font(.subheadline).padding(20).frame(minHeight: 56)
-        .background(theme.surface).disabled(library.isChanging)
+        .background(AlbumBackground()).disabled(library.isChanging)
     }
     private func removeSelectionFromGroup() {
         guard let group else { return }
@@ -430,7 +430,7 @@ struct PhotoPreview: View {
             VStack(spacing: 0) {
                 if !library.hasAccess { LibraryPermissionView() }
                 else if let photo {
-                    NativePhotoZoom(id: photo.id, service: library.service, language: store.appLanguage, nextID: nextPhoto?.id,
+                    NativePhotoZoom(id: photo.id, service: library.service, language: store.appLanguage, isLivePhoto: photo.isLivePhoto, nextID: nextPhoto?.id,
                                     onWillSwipe: { commitSwipe(photo.id, delete: $0) },
                                     onSwipe: { _ in advance(photo.id) }, onLoaded: { loaded = $0 })
                         .accessibilityAction(named: c("移至待删", "Mark for deletion")) { decide(photo.id, delete: true) }
@@ -439,7 +439,7 @@ struct PhotoPreview: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(AlbumBackground())
-            .navigationTitle(photo?.isLivePhoto == true ? "Live Photo · " + c("静态预览", "Still preview") : c("照片", "Photo"))
+            .navigationTitle(photo?.isLivePhoto == true ? "Live Photo" : c("照片", "Photo"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button(c("完成", "Done")) { dismiss() } } }
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -457,7 +457,7 @@ struct PhotoPreview: View {
                             else { decide(photo.id, delete: true) }
                         } label: { Label(photo.map { library.session.pendingDeletion.contains($0.id) } == true ? c("取消待删", "Unmark") : c("待删", "Pending"), systemImage: "tray") }
                             .disabled(!loaded).accessibilityIdentifier("preview.pending")
-                    }.font(.subheadline).padding(20).background(theme.surface).disabled(photo == nil || swiping)
+                    }.font(.subheadline).padding(20).background(AlbumBackground()).disabled(photo == nil || swiping)
                 }.background(AlbumBackground())
             }
             .fullScreenCover(item: $destination) { destination in
@@ -501,11 +501,7 @@ struct PhotoReviewView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.returnToPhotoHome) private var returnToPhotoHome
     @State private var loaded = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var translation = CGSize.zero
     @State private var exitingID: String?
-    @State private var transitionTask: Task<Void, Never>?
-    @State private var cardWidth: CGFloat = 400
     @State private var showPending = false
     @State private var destination: LibraryDestination?
     @State private var originalPhoto: LibraryPhoto?
@@ -523,40 +519,19 @@ struct PhotoReviewView: View {
             }.buttonStyle(.plain).padding(.horizontal, 16)
             if !library.hasAccess { LibraryPermissionView() }
             else if let id = current {
-                GeometryReader { geometry in
-                    LibraryThumbnail(id: id, large: true, onLoaded: { if current == id { loaded = $0 } })
-                        .accessibilityIdentifier("review.photo." + id)
-                        .accessibilityValue(exitingID != nil ? c("正在切换", "Changing") : loaded ? c("已加载", "Ready") : c("加载中", "Loading"))
-                        .id(id).clipShape(RoundedRectangle(cornerRadius: 12))
-                        .offset(x: translation.width)
-                        .rotationEffect(.degrees(reduceMotion ? 0 : Double(max(-6, min(6, translation.width / 40)))))
-                        .opacity(exitingID != nil && reduceMotion ? 0 : 1)
-                        .onTapGesture { openOriginal(id) }
-                        .accessibilityLabel(c("照片", "Photo"))
-                        .accessibilityHint(c("轻点查看原图", "Tap to view full size"))
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityAction { openOriginal(id) }
-                        .overlay(alignment: .top) {
-                            if abs(translation.width) > 35 {
-                                Text(translation.width < 0 ? c("移至待删", "Mark for deletion") : c("留在相册", "Keep photo"))
-                                    .font(.headline).padding(12).background(.black.opacity(0.8), in: Capsule()).padding(16)
-                            }
-                        }
-                        .gesture(DragGesture(minimumDistance: 12).onChanged { value in
-                            if loaded && exitingID == nil && abs(value.translation.width) > abs(value.translation.height) {
-                                translation = CGSize(width: value.translation.width, height: 0)
-                            }
-                        }.onEnded { value in
-                            if loaded && exitingID == nil && PhotoSwipeGesture.commits(translation: value.translation, velocity: value.velocity, width: geometry.size.width) {
-                                decide(id, delete: value.translation.width < 0)
-                            } else {
-                                withAnimation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.88)) { translation = .zero }
-                            }
-                        })
-                        .onChange(of: geometry.size.width, initial: true) { _, width in cardWidth = width }
-                        .accessibilityAction(named: c("移至待删", "Mark for deletion")) { if loaded { decide(id, delete: true) } }
-                        .accessibilityAction(named: c("留在相册", "Keep photo")) { if loaded { decide(id, delete: false) } }
-                }.padding(.horizontal, 12).padding(.top, 8)
+                NativePhotoZoom(id: id, service: library.service, language: store.appLanguage,
+                                isLivePhoto: library.photoByID[id]?.isLivePhoto == true,
+                                nextID: library.session.queue.first { $0 != id && !library.session.reviewed.contains($0) && library.photoByID[$0] != nil },
+                                photoIdentifierPrefix: "review.photo.",
+                                onWillSwipe: { commitSwipe(id, delete: $0) },
+                                onSwipe: { _ in finishSwipe() },
+                                onLoaded: { if current == id { loaded = $0 } },
+                                onTap: { openOriginal(id) })
+                    .accessibilityLabel(c("照片", "Photo"))
+                    .accessibilityHint(c("轻点查看原图", "Tap to view full size"))
+                    .accessibilityAction { openOriginal(id) }
+                    .accessibilityAction(named: c("移至待删", "Mark for deletion")) { decide(id, delete: true) }
+                    .accessibilityAction(named: c("留在相册", "Keep photo")) { decide(id, delete: false) }
                 Text(c("左滑待删 · 右滑保留", "Swipe left to mark · right to keep")).font(.caption).foregroundStyle(.secondary).padding(.vertical, 14)
             } else {
                 ContentUnavailableView(c("整理完成", "Review complete"), systemImage: "checkmark", description: Text(c("可在待删清单中删除原图。", "Open the pending list to delete originals.")))
@@ -576,9 +551,7 @@ struct PhotoReviewView: View {
         }
         .background(AlbumBackground()).navigationTitle(c("整理照片", "Review photos")).navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
-        .onDisappear {
-            transitionTask?.cancel(); exitingID = nil; translation = .zero
-        }
+        .onDisappear { exitingID = nil }
         .onChange(of: finished, initial: true) { _, complete in
             if complete { dismiss(); returnToPhotoHome() }
         }
@@ -608,25 +581,20 @@ struct PhotoReviewView: View {
         guard loaded, exitingID == nil, current == id else { return }
         originalPhoto = library.photoByID[id]
     }
-    private func decide(_ id: String, delete: Bool) {
-        guard loaded, exitingID == nil, current == id, originalPhoto == nil else { return }
-        // Persist the decision at release. The outgoing card remains visible
-        // only for the animation, so closing the page cannot lose the decision.
+    private func commitSwipe(_ id: String, delete: Bool) -> Bool {
+        guard loaded, exitingID == nil, current == id, originalPhoto == nil else { return false }
+        // Keep the outgoing resource until its native animation completes.
+        // Persist immediately so interruption cannot lose the user's decision.
         exitingID = id
         library.decide(id, delete: delete)
         #if !targetEnvironment(macCatalyst)
         UISelectionFeedbackGenerator().selectionChanged()
         #endif
-        withAnimation(.easeIn(duration: reduceMotion ? 0.08 : 0.18)) {
-            translation = CGSize(width: reduceMotion ? 0 : (delete ? -1 : 1) * cardWidth * 1.15, height: 0)
-        }
-        transitionTask?.cancel()
-        transitionTask = Task {
-            try? await Task.sleep(for: .milliseconds(reduceMotion ? 80 : 180))
-            guard !Task.isCancelled else { return }
-            var transaction = Transaction(); transaction.disablesAnimations = true
-            withTransaction(transaction) { loaded = false; translation = .zero; exitingID = nil }
-        }
+        return true
+    }
+    private func finishSwipe() { loaded = false; exitingID = nil }
+    private func decide(_ id: String, delete: Bool) {
+        if commitSwipe(id, delete: delete) { finishSwipe() }
     }
 }
 
@@ -636,7 +604,7 @@ struct ReviewOriginalPhotoView: View {
     @Environment(\.dismiss) private var dismiss
     let id: String
     var body: some View {
-        NativePhotoZoom(id: id, service: library.service, language: store.appLanguage, fullResolution: true)
+        NativePhotoZoom(id: id, service: library.service, language: store.appLanguage, fullResolution: true, isLivePhoto: library.photoByID[id]?.isLivePhoto == true)
             .background(AlbumBackground())
             .navigationTitle(AlbumCopy.pick(store.appLanguage, "原图", "Full-size photo"))
             .navigationBarTitleDisplayMode(.inline)

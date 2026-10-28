@@ -45,6 +45,7 @@ protocol PhotoLibraryService: AnyObject {
     func snapshot() async -> LibrarySnapshot
     func photos(in groupID: String) async -> [LibraryPhoto]
     func image(id: String, size: CGSize, progress: @escaping (Double) -> Void) async throws -> UIImage
+    func livePhoto(id: String, size: CGSize) async throws -> PHLivePhoto
     func imageData(id: String, progress: @escaping (Double) -> Void) async throws -> Data
     func createGroup(title: String, photoIDs: [String]) async throws
     func renameGroup(id: String, title: String) async throws
@@ -53,6 +54,11 @@ protocol PhotoLibraryService: AnyObject {
     func addPhotos(_ ids: [String], to groupID: String) async throws
     func removePhotos(_ ids: [String], from groupID: String) async throws
     func deletePhotos(_ ids: [String]) async throws
+}
+
+// Services without motion resources keep the independently loaded image usable.
+extension PhotoLibraryService {
+    func livePhoto(id: String, size: CGSize) async throws -> PHLivePhoto { throw PhotoLibraryFailure.imageUnavailable }
 }
 
 /// A PhotoKit callback may race cancellation, or deliver multiple representations.
@@ -190,6 +196,27 @@ final class SystemPhotoLibraryService: NSObject, PhotoLibraryService, PHPhotoLib
                     if let error = info?[PHImageErrorKey] as? Error { request.finish(.failure(error)); return }
                     guard (info?[PHImageResultIsDegradedKey] as? Bool) != true else { return }
                     if let image { request.finish(.success(image)) }
+                    else { request.finish(.failure(PhotoLibraryFailure.imageUnavailable)) }
+                })
+            }
+        } onCancel: { request.cancel() }
+    }
+    func livePhoto(id: String, size: CGSize) async throws -> PHLivePhoto {
+        let asset = try asset(id)
+        guard asset.mediaSubtypes.contains(.photoLive) else { throw PhotoLibraryFailure.imageUnavailable }
+        let request = PhotoRequest<PHLivePhoto>(manager: manager)
+        return try await withTaskCancellationHandler {
+            try Task.checkCancellation()
+            return try await withCheckedThrowingContinuation { continuation in
+                request.attach(continuation)
+                let options = PHLivePhotoRequestOptions()
+                options.deliveryMode = .highQualityFormat
+                options.isNetworkAccessAllowed = true
+                request.setID(manager.requestLivePhoto(for: asset, targetSize: size, contentMode: .aspectFit, options: options) { photo, info in
+                    if (info?[PHImageCancelledKey] as? Bool) == true { request.finish(.failure(CancellationError())); return }
+                    if let error = info?[PHImageErrorKey] as? Error { request.finish(.failure(error)); return }
+                    guard (info?[PHImageResultIsDegradedKey] as? Bool) != true else { return }
+                    if let photo { request.finish(.success(photo)) }
                     else { request.finish(.failure(PhotoLibraryFailure.imageUnavailable)) }
                 })
             }

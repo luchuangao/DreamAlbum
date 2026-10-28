@@ -49,6 +49,10 @@ final class DailyInboxFixture: PhotoLibraryService {
         let today = calendar.startOfDay(for: Date())
         let empty = ProcessInfo.processInfo.arguments.contains("-emptyDailyFixture")
         var photos = empty || ProcessInfo.processInfo.arguments.contains("-screenshotsOnlyFixture") ? [] : (0..<18).map { LibraryPhoto(id: "p\($0)", date: today.addingTimeInterval(Double(18 - $0) * 60), isScreenshot: false, isLivePhoto: false) }
+        if ProcessInfo.processInfo.arguments.contains("-livePhotoFixture"), !photos.isEmpty {
+            let first = photos[0]
+            photos[0] = LibraryPhoto(id: first.id, date: first.date, isScreenshot: first.isScreenshot, isLivePhoto: true)
+        }
         if !empty { photos += (0..<6).map { LibraryPhoto(id: "s\($0)", date: today.addingTimeInterval(Double(6 - $0) * 60), isScreenshot: true, isLivePhoto: false) } }
         if !ProcessInfo.processInfo.arguments.contains("-undatedOnlyFixture") {
             photos.append(LibraryPhoto(id: "yesterday", date: calendar.date(byAdding: .day, value: -1, to: today), isScreenshot: false, isLivePhoto: false))

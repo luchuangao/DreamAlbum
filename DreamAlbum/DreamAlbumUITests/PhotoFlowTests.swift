@@ -284,6 +284,45 @@ final class PhotoFlowTests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["library.photo.p0"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["library.selection.title"].label, "全部照片")
     }
+    func testIconOnlyLibraryAndLiveFallbackInBothLanguages() {
+        for (locale, allLabel) in [("zh-Hans", "全部照片"), ("en", "All photos")] {
+            app.terminate()
+            app.launchArguments = ["-AppleLanguages", "(\(locale))", "-AppleLocale", locale == "en" ? "en_US" : "zh_CN", "-dream_album.app_language", locale == "en" ? "english" : "chinese", "-dailyInboxFixture", "-resetDailyFixture", "-livePhotoFixture"]
+            app.launch()
+            let all = visibleButton("today.all")
+            XCTAssertEqual(all.label, allLabel)
+            XCTAssertLessThanOrEqual(all.frame.width, 52)
+            capture("home-icon-" + locale)
+            all.tap(); visiblePhoto().tap()
+            XCTAssertTrue(app.navigationBars["Live Photo"].waitForExistence(timeout: 5))
+            XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR label CONTAINS %@", "静态预览", "Still preview")).firstMatch.exists)
+            let image = app.images.matching(NSPredicate(format: "identifier BEGINSWITH %@", "preview.photo.")).firstMatch
+            XCTAssertTrue(image.waitForExistence(timeout: 8))
+            image.press(forDuration: 0.5)
+            XCTAssertTrue(image.exists)
+            capture("live-image-fallback-" + locale)
+        }
+    }
+    func testReviewAndPhotoActionsFollowEachTheme() {
+        launchDailyFixture()
+        for id in ["mistBlue", "iceMint", "bluePearl"] {
+            app.buttons["tab.me"].tap()
+            let row = app.buttons["settings.theme"]
+            for _ in 0..<4 where !row.isHittable { app.swipeUp() }
+            visibleButton("settings.theme").tap()
+            visibleButton("theme.option." + id).tap(); goBack()
+            app.buttons["tab.photos"].tap()
+            visibleButton("today.continue").tap(); readyReviewPhoto()
+            capture("review-background-" + id)
+            visibleButton("关闭整理").tap()
+            openAllPhotos(); visiblePhoto().tap(); readyPreviewPhoto()
+            capture("preview-actions-" + id)
+            visibleButton("完成").tap()
+            visibleButton("选择").tap(); visiblePhoto().tap()
+            capture("selection-actions-" + id)
+            visibleButton("完成").tap(); goBack()
+        }
+    }
     func testHomeHeaderKeepsAllPhotosBeforeLargePendingOnOneRow() {
         for count in [13, 1000] {
             app.terminate()
