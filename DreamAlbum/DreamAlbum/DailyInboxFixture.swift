@@ -34,7 +34,9 @@ final class DailyInboxFixture: PhotoLibraryService {
             let reviewedIDs = arguments.contains("-allReviewedFixture") ? fixture.assets.map(\.id)
                 : arguments.contains("-completedDailyFixture") ? today.map(\.id)
                 : ["p0", "p1", "p2", "p3", "p4", "p5", "s0", "s1"]
-            for id in reviewedIDs where fixture.assets.contains(where: { $0.id == id }) { session.decide(id, delete: false) }
+            let seededIDs = arguments.contains("-homeDateTaskFixture") ? ["todayDone", "dayDone"] : reviewedIDs
+            for id in seededIDs where fixture.assets.contains(where: { $0.id == id }) { session.decide(id, delete: false) }
+            if arguments.contains("-homeDateTaskFixture") { session.decide("dayDone", delete: true) }
             defaults.set(try? JSONEncoder().encode(session), forKey: "dream_album.photo_review.v1")
         }
         return PhotoLibraryStore(service: fixture, defaults: defaults)
@@ -51,6 +53,13 @@ final class DailyInboxFixture: PhotoLibraryService {
         }
         if ProcessInfo.processInfo.arguments.contains("-singleScreenshotFixture") { photos.removeAll { $0.id.hasPrefix("s") && $0.id != "s0" } }
         photos.append(LibraryPhoto(id: "unknown", date: nil, isScreenshot: true, isLivePhoto: false))
+        if ProcessInfo.processInfo.arguments.contains("-homeDateTaskFixture") {
+            let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+            photos = [LibraryPhoto(id: "todayDone", date: today.addingTimeInterval(60), isScreenshot: false, isLivePhoto: false),
+                      LibraryPhoto(id: "dayDone", date: yesterday.addingTimeInterval(120), isScreenshot: false, isLivePhoto: false),
+                      LibraryPhoto(id: "dayRemaining", date: yesterday.addingTimeInterval(60), isScreenshot: false, isLivePhoto: false),
+                      LibraryPhoto(id: "older", date: calendar.date(byAdding: .month, value: -1, to: yesterday), isScreenshot: false, isLivePhoto: false)]
+        }
         assets = photos
     }
     func requestAccess() async -> PHAuthorizationStatus { authorization }

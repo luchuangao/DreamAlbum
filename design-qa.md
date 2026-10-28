@@ -1,24 +1,28 @@
-# 待整理首页、日历与提醒检查
+# 日期任务首页对比（构建 12）
 
-日期：2026-10-27。版本 1.1，构建 11。
+日期：2026-10-28。保留 SwiftUI / PhotoKit 原生应用，按用户选择的第 1 张效果图实现。
 
-首页只显示最近一个未完成日期的剩余图片；照片、截图使用分区卡片，单张图片横排，完成内容与空分类隐藏。底栏按用户参考保留上一版圆环、状态、日期和右侧继续整理；今日已完成时勾选状态保留，实际内容切到历史未整理任务。
+## 对比依据
 
-日历通过数量和状态图例展示每日进度，可对任一天重新整理。操作固定在面板底部，不需要滚到底才能找到。我的提供整理提醒开关与时间，默认 22:00，系统拒绝通知时可以前往设置。
+参考：Design/selected-home-date-task.png（853×1844，无系统栏）。实现：本机 .ui-checks/home-date-v12/iphone-final.png（1206×2622）及 ipad-final.png（1668×2420）。源图和实现放在同一画布 comparison-initial.png、comparison-final.png 查看；iPhone 按 3x 原生状态栏和底部安全区裁去 186px / 102px，再等比归一到 390px 宽，参考为 390×843，实现 App 内容为 390×755。可用内容高度差来自保留的原生系统区域，未拉伸或伪造系统栏。
 
-全部照片筛选使用独立分区面板，照片类型、月份与重新整理分开显示，替代层层展开的菜单。
+## 问题与修复
 
-已人工查看实际 iPhone/iPad 导出截图，未修改原图：
+- 初轮 [P2]：单张图使用 16:10 与 20pt 边距，较效果图明显偏矮、偏窄。改为约 4:3，并比标题向两侧各延伸 8pt；重新编译、在相同 fixture 状态重新启动并截图。comparison-final.png 显示图片顶部、宽度和底边已对齐参考布局，无剩余 P0/P1/P2。
+- 其余差异是原生字体真实渲染、动态图库内容和系统安全区域。保留统一纯色背景，不复刻生成图的轻微纹理。Debug 使用原有插画图库，正式环境显示真实 PhotoKit 图片，未用生成的海边图替换用户照片。
 
-- `.ui-checks/inbox-reminder/iphone-footer-shots/pending-older-day-home.png`
-- `.ui-checks/inbox-reminder/iphone-footer-shots/daily-inbox.png`
-- `.ui-checks/inbox-reminder/iphone-polish-shots/sorting-reminder-enabled.png`
-- `.ui-checks/inbox-reminder/ipad-polish-shots/calendar-restart-day.png`
+## 五项检查
 
-53 项单元测试通过；手机和 iPad 的提醒、重整日期、隐藏完成内容、历史接续及底栏恢复分别完成针对性回归。逐次测试结果、初期失败原因与真机投递边界见 VALIDATION.md 和本机 `.ui-checks/inbox-reminder/QA.md`。
+- 字体与文案：SF Pro / 苹方，主标题 32pt、分类 title3、日期与底栏采用原生 subheadline/caption。无截断；底部清楚显示“还剩 1 张”和“已整理 1 / 2”，类别没有重复待整理数量。辅助功能标签仍读出类别数量。
+- 布局：顶部日期与待删胶囊、分类标题、横向大图及底部唯一进度区；单图圆角 18pt，页面标题左右 20pt，图片左右 12pt。iPad 内容宽度限制为 700pt，操作区域和四个标签始终可见。
+- 颜色：沿用 #0E1011 背景、#1B1D1F 表面与薄荷绿，次级文字灰色；没有重新引入自定义背景、阴影或玻璃大弹层。
+- 图片与图标：按显示大小请求图库预览，单图 1200×800 请求级别，裁切为 4:3；使用现有 SF Symbols。云端加载和失败状态仍由 LibraryThumbnail 管理。
+- 状态与操作：圆环只反映当前展示日期；当天已完成也不会把历史任务标为完成。日历切月、所选日期重整、关闭后日期同步、待删标记保留和系统删除成功返回均通过双设备回归。
 
-本轮没有自动删除真机照片或发布 App Store。实际夜间通知投递、大库性能和 iCloud 下载不以模拟器结果替代。
+## 验证
 
-最终筛选面板与统一背景月份列表在 iPhone/iPad 各完成 1 项流程回归；已检查原始截图 `iphone-filter-shots/filter-panel.png` 和 `ipad-filter-shots/filter-panel.png`。最终版本 1.1（11）已安装到同一手机，最终构建、回归与回执见 VALIDATION.md。
+57 项单元测试通过。iphone.xcresult、ipad.xcresult 各 7 项 UI 全通过；随后只调整图片比例和边距，完成新的模拟器、签名 iOS 与 Mac Catalyst 构建，并用新二进制在双设备相同 fixture 下重新截图人工检查，无新增业务改动。
+
+本轮没有执行真机原图删除，真实权限、iCloud 下载和万张图库性能仍遵循 VALIDATION.md 的验收范围。
 
 final result: passed

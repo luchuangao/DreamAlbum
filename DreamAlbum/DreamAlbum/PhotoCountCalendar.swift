@@ -61,6 +61,20 @@ struct PhotoCalendarMonth {
     }
 }
 
+enum PhotoCalendarNavigation {
+    static func offset(for translation: CGSize) -> Int? {
+        guard abs(translation.width) >= 50, abs(translation.width) > abs(translation.height) * 1.3 else { return nil }
+        return translation.width < 0 ? 1 : -1
+    }
+    static func month(by offset: Int, from date: Date, today: Date, calendar: Calendar = .current) -> Date? {
+        guard let start = calendar.dateInterval(of: .month, for: date)?.start,
+              let next = calendar.date(byAdding: .month, value: offset, to: start),
+              let latest = calendar.dateInterval(of: .month, for: today)?.start,
+              next <= latest else { return nil }
+        return next
+    }
+}
+
 struct PhotoCountCalendar: View {
     let assets: [LibraryPhoto]
     let language: AppLanguage
@@ -120,6 +134,9 @@ struct PhotoCountCalendar: View {
                 }
             }.frame(maxWidth: 600).padding(20).frame(maxWidth: .infinity)
         }
+        .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { value in
+            if let offset = PhotoCalendarNavigation.offset(for: value.translation) { moveMonth(offset) }
+        })
         .background(LibraryStyle.background)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
@@ -129,7 +146,7 @@ struct PhotoCountCalendar: View {
                         selection = Date(); month = selection; onToday()
                     }.frame(minHeight: 44).accessibilityIdentifier("calendar.today")
                     Spacer(minLength: 8)
-                    if assets.contains(where: { $0.date.map { calendar.isDate($0, inSameDayAs: selection) } ?? false }), let onRestart {
+                    if calendar.isDate(selection, equalTo: month, toGranularity: .month), assets.contains(where: { $0.date.map { calendar.isDate($0, inSameDayAs: selection) } ?? false }), let onRestart {
                         Button(c("重新整理当天", "Review this day again")) { onRestart(selection) }
                             .font(.subheadline.weight(.semibold)).frame(minHeight: 44)
                             .accessibilityIdentifier("calendar.restart")
@@ -178,7 +195,9 @@ struct PhotoCountCalendar: View {
         .accessibilityIdentifier(String(format: "calendar.day.%04d-%02d-%02d", calendar.component(.year, from: day.date), calendar.component(.month, from: day.date), day.number))
     }
     private func moveMonth(_ offset: Int) {
-        if let next = calendar.date(byAdding: .month, value: offset, to: month) { month = next }
+        if let next = PhotoCalendarNavigation.month(by: offset, from: month, today: Date(), calendar: calendar) {
+            withAnimation(.easeInOut(duration: 0.2)) { month = next }
+        }
     }
     private func monthTitle(_ date: Date) -> String {
         let formatter = DateFormatter(); formatter.locale = calendar.locale; formatter.calendar = calendar

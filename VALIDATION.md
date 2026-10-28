@@ -143,3 +143,22 @@ Mac 链接器会提示本机 Metal toolchain 的一个 Swift 搜索目录不存�
 最终版本 1.1（11）已覆盖安装到同一配对 iPhone 15，回执 `device-install-latest.json`；通过 `--terminate-existing` 重启确保运行最新代码，启动回执为 `device-launch-latest.json`。未卸载 App 或清空个人数据。
 
 按用户要求，每次版本更新后提交源码并同步至 https://github.com/luchuangao/DreamAlbum ，规则已写入 AGENTS.md。仓库保留初始提交历史，未包含构建缓存、签名材料、个人照片或原始本机测试产物。直接 Git HTTPS 连接超时后，通过已连接 GitHub 服务同步对象；文件内容使用 Git blob SHA 校验。
+
+
+## 2026-10-28 第 1 版首页、切月与日期重整（构建 12）
+
+按用户最后三张效果图中第 1 张实现，原图保存在 `Design/selected-home-date-task.png`。顶部日期和待删，分类标题及单张 4:3 大预览，底部只保留一组剩余数量和当前日期的已整理/总数。移除顶部概览、手势文字、卡片重复待整理数量；修复误把“今天完成”显示成“历史当前任务已完成”。无日期组进度也计入其中已整理资源。
+
+日历支持右滑上个月、左滑下个月；纵向滚动和短拖不切月，保留箭头与跳转，不能进入未来月份。浏览其他月份时，不显示不可见日期的重新整理入口。重新整理先将首页所选日期更新为日历日期，再重置该日判断；中途关闭后日期保持同步，待删标记及其他日期进度保留。全部完成后仍按原有规则自动回首页并跳过已整理内容。
+
+待删清单移除截图中两条原图/副本和 Live Photo 说明，删除按钮和系统 PhotoKit 删除流程不变。
+
+- `.ui-checks/home-date-v12/iphone.xcresult`：57 项单元、7 项 UI 全通过。新增 4 项单元覆盖横向手势判断、跨年和未来月份、当前日期进度及无日期进度。
+- `ipad.xcresult`：同样 7 项 UI 全通过，包括左右切月、未来月份限制、从另一个月份重新整理所选日期后关闭、当前剩余/进度唯一且一致、提示移除、历史接续、单日重整、英文空状态、删除成功关闭以及退出恢复。
+- 初次并排视觉对比发现单图比例偏矮、边距偏宽；改为 4:3 并向两侧扩展 8pt 后，以新编译二进制在相同状态重新截图检查，见 `comparison-initial.png` / `comparison-final.png`、`iphone-final.png` / `ipad-final.png`。这次仅调整预览几何，没有改变已通过的业务逻辑，不重复全套测试。
+- 最终模拟器、自动签名 iOS 与 Mac Catalyst 构建成功，日志为 `build-visual.log`、`build-device-final.log`、`build-mac-final.log`。视觉门槛报告 `design-qa.md` 为 passed。
+- UI 使用隔离 Debug 图库与 UserDefaults，未执行真机照片删除。真实权限、云端下载、大库及完整辅助功能专项验收边界不变。
+
+本轮按 AGENTS.md 要求提交源码、选定设计和验证摘要，保留 GitHub 历史；原始测试产物和设备数据继续仅留本机。
+
+构建 12 已覆盖安装到同一配对 iPhone 15（device-install.json 为 success），没有卸载或清空数据。已通过 --terminate-existing 成功启动最新代码。安装与启动回执保存在本机 .ui-checks/home-date-v12/。

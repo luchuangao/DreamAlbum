@@ -628,10 +628,6 @@ struct PendingPhotosView: View {
     private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
     var body: some View {
         List {
-            Section {
-                Text(c("删除手机原图，画册副本保留。", "Deletes library originals. Dream album copies stay."))
-                Text(c("Live Photo 的动态部分也会删除。", "Live Photos include the motion component.")).font(.caption).foregroundStyle(.secondary)
-            }
             if library.session.pendingDeletion.count > library.pendingPhotos.count {
                 Section { Text(c("不可访问的照片保留待删状态。", "Inaccessible photos remain pending.")) }
             }

@@ -71,8 +71,8 @@ final class PhotoFlowTests: XCTestCase {
     }
     func testCompletedHomeContinuesOlderThenUndatedWithoutRepeating() {
         launchDailyFixture(completed: true)
-        XCTAssertTrue(app.staticTexts["today.summary"].waitForExistence(timeout: 8))
-        XCTAssertEqual(app.staticTexts["today.summary"].label, "1 张待整理")
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 1 张")
         XCTAssertFalse(app.staticTexts["today.completed"].exists)
         XCTAssertFalse(app.buttons["today.screenshots"].exists)
         capture("pending-older-day-home")
@@ -93,7 +93,7 @@ final class PhotoFlowTests: XCTestCase {
     }
     func testEmptyHomeCategoryIsHidden() {
         launchDailyFixture(screenshotsOnly: true, singleScreenshot: true)
-        XCTAssertTrue(app.staticTexts["today.summary"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
         // s0 starts reviewed, so the inbox skips to the earlier unreviewed photo.
         XCTAssertTrue(visibleButton("today.photos").exists)
         XCTAssertFalse(app.buttons["today.screenshots"].exists)
@@ -113,7 +113,7 @@ final class PhotoFlowTests: XCTestCase {
         XCTAssertEqual(readyReviewPhoto().identifier, "review.photo.p0")
         readyReviewPhoto().swipeLeft()
         visibleButton("关闭整理").tap()
-        XCTAssertEqual(app.staticTexts["today.summary"].label, "23 张待整理")
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 23 张")
         XCTAssertEqual(visibleButton("today.pending").label, "待删 1")
         // Restart that day again: prior pending markers must survive.
         visibleButton("today.calendar").tap()
@@ -180,6 +180,64 @@ final class PhotoFlowTests: XCTestCase {
         visibleButton("重新整理当前范围").tap()
         XCTAssertEqual(readyReviewPhoto().identifier, "review.photo.p0")
         visibleButton("关闭整理").tap()
+    }
+    func launchHomeDateTaskFixture() {
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN", "-dailyInboxFixture", "-resetDailyFixture", "-homeDateTaskFixture"]
+        app.launch()
+    }
+    func testSelectedHomeHasOneProgressAndPendingDescriptionsAreRemoved() {
+        launchHomeDateTaskFixture()
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 1 张")
+        XCTAssertEqual(app.staticTexts["today.next"].label, "已整理 1 / 2")
+        XCTAssertFalse(app.staticTexts["已完成"].exists)
+        XCTAssertFalse(app.staticTexts["左滑待删 · 右滑保留"].exists)
+        XCTAssertFalse(app.staticTexts["1 张待整理"].exists)
+        XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label == %@", "还剩 1 张")).count, 1)
+        XCTAssertTrue(visibleButton("today.photos").exists)
+        XCTAssertFalse(app.buttons["today.screenshots"].exists)
+        capture("selected-home-date-task")
+        visibleButton("today.pending").tap()
+        XCTAssertTrue(app.navigationBars["待删清单"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["删除手机原图，画册副本保留。"].exists)
+        XCTAssertFalse(app.staticTexts["Live Photo 的动态部分也会删除。"].exists)
+        capture("pending-without-descriptions")
+    }
+    func testCalendarSwipeMonthsAndRestartUsesChosenDate() {
+        launchHomeDateTaskFixture()
+        visibleButton("today.calendar").tap()
+        let calendar = Calendar.current
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date())!
+        let older = calendar.date(byAdding: .month, value: -1, to: yesterday)!
+        let title = app.buttons["calendar.month"]
+        let initial = title.label
+        app.scrollViews.firstMatch.swipeRight()
+        let changed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in title.label != initial }, object: app)
+        XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed)
+        capture("calendar-swiped-previous")
+        app.scrollViews.firstMatch.swipeLeft()
+        XCTAssertEqual(title.label, initial)
+        // A left swipe cannot advance beyond the current month.
+        app.scrollViews.firstMatch.swipeLeft()
+        XCTAssertEqual(title.label, initial)
+        app.scrollViews.firstMatch.swipeRight()
+        let formatter = DateFormatter(); formatter.dateFormat = "yyyy-MM-dd"
+        app.buttons["calendar.day." + formatter.string(from: older)].tap()
+        visibleButton("完成").tap()
+        let label = DateFormatter(); label.locale = Locale(identifier: "zh_CN"); label.dateFormat = "M月d日 EE"
+        XCTAssertEqual(visibleButton("today.calendar").value as? String, label.string(from: older))
+        visibleButton("today.calendar").tap()
+        visibleButton("calendar.next").tap()
+        app.buttons["calendar.day." + formatter.string(from: yesterday)].tap()
+        visibleButton("calendar.restart").tap()
+        XCTAssertEqual(readyReviewPhoto().identifier, "review.photo.dayDone")
+        visibleButton("关闭整理").tap()
+        XCTAssertEqual(visibleButton("today.calendar").value as? String, label.string(from: yesterday))
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 2 张")
+        XCTAssertEqual(app.staticTexts["today.next"].label, "已整理 0 / 2")
+        XCTAssertEqual(visibleButton("today.pending").label, "待删 1")
+        capture("restart-follows-calendar-date")
     }
     func testCalendarShowsReviewedProgress() {
         launchDailyFixture()
@@ -260,8 +318,8 @@ final class PhotoFlowTests: XCTestCase {
     }
     func testTodayInboxScopeAndResume() {
         launchDailyFixture()
-        XCTAssertTrue(app.staticTexts["today.summary"].waitForExistence(timeout: 8))
-        XCTAssertEqual(app.staticTexts["today.summary"].label, "16 张待整理")
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 16 张")
         XCTAssertTrue(visibleButton("today.continue").isEnabled)
         XCTAssertFalse(app.buttons["截图"].exists)
         capture("daily-inbox")
@@ -271,7 +329,7 @@ final class PhotoFlowTests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["review.photo.s2"].exists)
         readyReviewPhoto().swipeRight()
         visibleButton("关闭整理").tap()
-        XCTAssertEqual(app.staticTexts["today.summary"].label, "15 张待整理")
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 15 张")
         visibleButton("today.photos").tap()
         readyReviewPhoto()
         XCTAssertTrue(app.descendants(matching: .any)["review.photo.p6"].exists)
@@ -282,8 +340,8 @@ final class PhotoFlowTests: XCTestCase {
         capture("daily-review-resume")
         visibleButton("关闭整理").tap()
         launchDailyFixture(reset: false)
-        XCTAssertTrue(app.staticTexts["today.summary"].waitForExistence(timeout: 8))
-        XCTAssertEqual(app.staticTexts["today.summary"].label, "15 张待整理")
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 15 张")
         visibleButton("today.calendar").tap()
         XCTAssertTrue(app.navigationBars["选择日期"].waitForExistence(timeout: 5))
         capture("daily-calendar")
@@ -301,8 +359,8 @@ final class PhotoFlowTests: XCTestCase {
     }
     func testEmptyTodayUsesNearestUnreviewedDay() {
         launchDailyFixture(empty: true)
-        XCTAssertTrue(app.staticTexts["today.summary"].waitForExistence(timeout: 8))
-        XCTAssertEqual(app.staticTexts["today.summary"].label, "1 张待整理")
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 1 张")
         XCTAssertTrue(visibleButton("today.photos").exists)
         XCTAssertFalse(app.buttons["today.screenshots"].exists)
         visibleButton("today.continue").tap()
@@ -316,7 +374,7 @@ final class PhotoFlowTests: XCTestCase {
     }
     func testUndatedOnlyLibraryOffersReviewAndPending() {
         launchDailyFixture(empty: true, undatedOnly: true)
-        XCTAssertTrue(app.staticTexts["today.summary"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
         XCTAssertTrue(visibleButton("today.continue").exists)
         visibleButton("today.pending").tap()
         XCTAssertTrue(app.navigationBars["待删清单"].waitForExistence(timeout: 5))
@@ -333,7 +391,7 @@ final class PhotoFlowTests: XCTestCase {
         app.alerts.firstMatch.buttons.firstMatch.tap()
         XCTAssertTrue(visibleButton("group.actions.editable").exists)
         app.buttons["tab.photos"].tap()
-        XCTAssertEqual(app.staticTexts["today.summary"].label, "16 张待整理")
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 16 张")
         launchDailyFixture()
         app.buttons["tab.groups"].tap()
         visibleButton("group.actions.editable").tap()
@@ -342,7 +400,7 @@ final class PhotoFlowTests: XCTestCase {
         XCTAssertFalse(app.buttons["group.actions.editable"].exists)
         XCTAssertTrue(app.alerts.count == 0)
         app.buttons["tab.photos"].tap()
-        XCTAssertEqual(app.staticTexts["today.summary"].label, "16 张待整理")
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 16 张")
     }
     func testRemoveFromGroupKeepsOriginalInLibrary() {
         launchDailyFixture()
@@ -359,19 +417,19 @@ final class PhotoFlowTests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [absent], timeout: 8), .completed)
         XCTAssertEqual(app.staticTexts["library.selection.title"].label, "已选择 0 张")
         app.buttons["tab.photos"].tap()
-        XCTAssertEqual(app.staticTexts["today.summary"].label, "16 张待整理")
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 16 张")
     }
     func testFinishingEachHomeCategoryReturnsHomeAndKeepsPending() {
         launchDailyFixture(empty: true)
         visibleButton("today.photos").tap()
         readyReviewPhoto().swipeRight()
-        XCTAssertTrue(app.staticTexts["today.summary"].waitForExistence(timeout: 8))
-        XCTAssertEqual(app.staticTexts["today.summary"].label, "1 张待整理")
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 1 张")
         XCTAssertFalse(app.staticTexts["整理完成"].exists)
         visibleButton("today.screenshots").tap()
         readyReviewPhoto().swipeLeft()
         XCTAssertEqual(visibleButton("today.pending").label, "待删 1")
-        XCTAssertEqual(app.staticTexts["today.summary"].label, "1 张待整理")
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 1 张")
         XCTAssertTrue(visibleButton("today.continue").isEnabled)
         capture("completed-review-returns-home")
     }
@@ -426,8 +484,8 @@ final class PhotoFlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["最近项目"].exists)
         XCTAssertTrue(app.alerts.count == 0)
         app.buttons["tab.photos"].tap()
-        XCTAssertTrue(app.staticTexts["today.summary"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["today.summary"].label, "16 张待整理")
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 16 张")
     }
     private func markFixturePhoto() {
         visibleButton("today.continue").tap()

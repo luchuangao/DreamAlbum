@@ -66,6 +66,7 @@ struct PhotoInboxBatch {
     let items: [LibraryPhoto]
     let total: Int
     let completed: Int
+    var progress: Double { total == 0 ? 0 : Double(completed) / Double(total) }
     var photos: [LibraryPhoto] { items.filter { !$0.isScreenshot } }
     var screenshots: [LibraryPhoto] { items.filter(\.isScreenshot) }
     init(today: Date, selectedDay: Date?, assets: [LibraryPhoto], reviewed: Set<String>, calendar: Calendar = .current) {
@@ -80,8 +81,8 @@ struct PhotoInboxBatch {
         } else {
             date = nil
             items = pending.filter { $0.date == nil }
-            total = items.count
-            completed = 0
+            total = assets.filter { $0.date == nil }.count
+            completed = total - items.count
         }
     }
 }
@@ -118,13 +119,12 @@ struct DailyPhotoInboxView: View {
                         } else if current.items.isEmpty {
                             emptyInbox
                         } else {
-                            overview(current)
                             if !current.photos.isEmpty { collection(title: c("照片", "Photos"), icon: "photo", assets: current.photos, identifier: "today.photos") }
                             if !current.screenshots.isEmpty { collection(title: c("截图", "Screenshots"), icon: "viewfinder", assets: current.screenshots, identifier: "today.screenshots") }
                         }
                     }
                     .frame(maxWidth: 700, alignment: .leading)
-                    .padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 24)
+                    .padding(.horizontal, 20).padding(.top, 32).padding(.bottom, 24)
                     .frame(maxWidth: .infinity)
                 }
                 if library.hasAccess && !current.items.isEmpty { actionBar(current) }
@@ -152,12 +152,13 @@ struct DailyPhotoInboxView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in selectedDay = nil }
     }
     private func header(_ current: PhotoInboxBatch) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 24) {
             HStack(alignment: .firstTextBaseline) {
-                Text(c("整理照片", "Review photos")).font(.largeTitle.bold())
+                Text(c("整理照片", "Review photos")).font(.system(size: 32, weight: .bold))
                 Spacer(minLength: 12)
-                Button(c("全部照片", "All photos")) { showAllPhotos = true }
-                    .font(.subheadline.weight(.medium)).frame(minHeight: 44)
+                Button { showAllPhotos = true } label: {
+                    HStack(spacing: 5) { Text(c("全部照片", "All photos")); Image(systemName: "chevron.right").font(.caption) }
+                }.font(.subheadline.weight(.medium)).frame(minHeight: 44)
                     .accessibilityIdentifier("today.all")
             }
             ViewThatFits(in: .horizontal) {
@@ -167,14 +168,17 @@ struct DailyPhotoInboxView: View {
         }
     }
     private func dateButton(_ current: PhotoInboxBatch) -> some View {
-        Button { calendarDay = current.date ?? Date(); showCalendar = true } label: {
+        let displayedDate = current.date ?? (current.items.isEmpty ? selectedDay : nil)
+        return Button { calendarDay = displayedDate ?? selectedDay ?? Date(); showCalendar = true } label: {
             HStack(spacing: 8) {
                 Image(systemName: "calendar")
-                Text(current.date.map(dateLabel) ?? (current.items.isEmpty ? c("选择日期", "Choose date") : c("日期未知", "Undated")))
+                Text(displayedDate.map(dateLabel) ?? (current.items.isEmpty ? c("选择日期", "Choose date") : c("日期未知", "Undated")))
                     .accessibilityIdentifier("today.date")
                 Image(systemName: "chevron.down").font(.caption2.weight(.semibold))
-            }.font(.subheadline).foregroundStyle(.secondary).frame(minHeight: 44)
+            }.font(.subheadline).foregroundStyle(.primary).padding(.horizontal, 14).frame(minHeight: 44)
+                .background(LibraryStyle.surface, in: Capsule())
         }.buttonStyle(.plain).accessibilityLabel(c("选择日期", "Choose date"))
+            .accessibilityValue(displayedDate.map(dateLabel) ?? c("日期未知", "Undated"))
             .accessibilityIdentifier("today.calendar").disabled(!library.hasAccess)
     }
     private var pendingButton: some View {
@@ -189,82 +193,52 @@ struct DailyPhotoInboxView: View {
             .accessibilityLabel(c("待删 \(library.session.pendingDeletion.count)", "Pending \(library.session.pendingDeletion.count)"))
             .accessibilityIdentifier("today.pending")
     }
-    private func overview(_ current: PhotoInboxBatch) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(c("\(current.items.count) 张待整理", "\(current.items.count) to review"))
-                .font(.title2.bold()).accessibilityIdentifier("today.summary")
-            Text(c("左滑待删 · 右滑保留", "Swipe left to delete · right to keep"))
-                .font(.subheadline).foregroundStyle(.secondary)
-            if current.completed > 0 {
-                HStack(spacing: 10) {
-                    ProgressView(value: Double(current.completed), total: Double(current.total)).tint(LibraryStyle.mint)
-                    Text(c("已整理 \(current.completed) 张", "\(current.completed) reviewed"))
-                        .font(.caption).foregroundStyle(.secondary).fixedSize()
-                }.padding(.top, 4)
-            }
-        }
-    }
     private func collection(title: String, icon: String, assets: [LibraryPhoto], identifier: String) -> some View {
         Button { review(assets.map(\.id)) } label: {
-            Group {
-                if assets.count == 1, let photo = assets.first {
-                    HStack(spacing: 16) {
-                        LibraryThumbnail(id: photo.id).frame(width: 88, height: 88)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .allowsHitTesting(false).accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label(title, systemImage: icon).font(.headline).foregroundStyle(.primary)
-                            Text(c("1 张待整理", "1 to review")).font(.subheadline).foregroundStyle(.secondary)
-                        }
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                    }
-                } else {
-            VStack(spacing: 14) {
-                HStack(spacing: 8) {
-                    Label(title, systemImage: icon).font(.headline).foregroundStyle(.primary)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 10) {
+                    Label(title, systemImage: icon).font(.title3.bold()).foregroundStyle(.primary)
                     Spacer()
-                    Text(c("\(assets.count) 张", "\(assets.count) items")).font(.subheadline).foregroundStyle(.secondary)
-                    Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                }
-                HStack(spacing: 6) {
-                    ForEach(Array(assets.prefix(3).enumerated()), id: \.element.id) { index, photo in
-                        LibraryThumbnail(id: photo.id)
-                            .aspectRatio(1, contentMode: .fit)
-                            .clipped().clipShape(RoundedRectangle(cornerRadius: 10))
-                            .overlay {
-                                if index == 2 && assets.count > 3 {
-                                    RoundedRectangle(cornerRadius: 10).fill(.black.opacity(0.4))
-                                    Text("+\(assets.count - 3)").font(.title2.bold()).foregroundStyle(.white)
+                    Image(systemName: "chevron.right").font(.subheadline).foregroundStyle(.secondary)
+                }.frame(minHeight: 32)
+                if let photo = assets.first, assets.count == 1 {
+                    LibraryThumbnail(id: photo.id, hero: true)
+                        .aspectRatio(4.0 / 3.0, contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                        .padding(.horizontal, -8)
+                        .allowsHitTesting(false).accessibilityHidden(true)
+                } else {
+                    HStack(spacing: 6) {
+                        ForEach(Array(assets.prefix(3).enumerated()), id: \.element.id) { index, photo in
+                            LibraryThumbnail(id: photo.id)
+                                .aspectRatio(1, contentMode: .fit)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay {
+                                    if index == 2 && assets.count > 3 {
+                                        RoundedRectangle(cornerRadius: 12).fill(.black.opacity(0.4))
+                                        Text("+\(assets.count - 3)").font(.title2.bold()).foregroundStyle(.white)
+                                    }
                                 }
-                            }
-                    }
-                    if assets.count < 3 { Spacer(minLength: 0) }
-                }.frame(maxHeight: 180).allowsHitTesting(false).accessibilityHidden(true)
+                        }
+                    }.allowsHitTesting(false).accessibilityHidden(true)
                 }
-            }
-            }.padding(16).background(LibraryStyle.surface, in: RoundedRectangle(cornerRadius: 20))
-                .contentShape(RoundedRectangle(cornerRadius: 20))
+            }.contentShape(Rectangle())
         }.buttonStyle(.plain)
             .accessibilityLabel(c("\(title)，待整理 \(assets.count) 张", "\(title), \(assets.count) remaining"))
             .accessibilityIdentifier(identifier)
     }
     private func actionBar(_ current: PhotoInboxBatch) -> some View {
-        let today = PhotoDaySummary(date: Date(), assets: library.photos, reviewed: library.session.reviewed)
-        let todayComplete = !today.items.isEmpty && today.remaining == 0
-        let progress = todayComplete ? 1 : Double(current.completed) / Double(max(1, current.total))
         return HStack(spacing: 12) {
             ZStack {
-                Circle().stroke(.white.opacity(0.12), lineWidth: 4)
-                Circle().trim(from: 0, to: progress)
-                    .stroke(LibraryStyle.mint, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                Circle().stroke(.white.opacity(0.12), lineWidth: 5)
+                Circle().trim(from: 0, to: current.progress)
+                    .stroke(LibraryStyle.mint, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                if todayComplete { Image(systemName: "checkmark").font(.caption.weight(.semibold)).foregroundStyle(LibraryStyle.mint) }
-            }.frame(width: 30, height: 30).accessibilityHidden(true)
+            }.frame(width: 40, height: 40).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
-                Text(todayComplete ? c("已完成", "Done") : c("还剩 \(current.items.count) 张", "\(current.items.count) remaining"))
+                Text(c("还剩 \(current.items.count) 张", "\(current.items.count) remaining"))
                     .font(.subheadline.weight(.medium)).accessibilityIdentifier("today.remaining")
-                Text((current.date.map(shortDate) ?? c("日期未知", "Undated")) + c(" · 待整理 \(current.items.count) 张", " · \(current.items.count) to review"))
+                Text(c("已整理 \(current.completed) / \(current.total)", "Reviewed \(current.completed) / \(current.total)"))
                     .font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("today.next")
             }
             Spacer(minLength: 8)
@@ -273,18 +247,12 @@ struct DailyPhotoInboxView: View {
                     Text(c("继续整理", "Continue"))
                     Image(systemName: "arrow.right")
                 }.frame(minHeight: 44)
-            }.font(.subheadline.weight(.medium)).foregroundStyle(LibraryStyle.mint)
+            }.font(.subheadline.weight(.semibold)).foregroundStyle(LibraryStyle.mint)
                 .buttonStyle(.plain).accessibilityIdentifier("today.continue")
                 .accessibilityLabel(c("继续整理 \(current.items.count) 张", "Continue, \(current.items.count) items"))
         }
         .frame(maxWidth: 700).padding(.horizontal, 20).padding(.vertical, 10).frame(maxWidth: .infinity)
         .background(LibraryStyle.background).overlay(alignment: .top) { Divider() }
-    }
-    private func shortDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: store.appLanguage == .english ? "en_US" : "zh_CN")
-        formatter.dateFormat = store.appLanguage == .english ? "MMM d" : "M月d日"
-        return formatter.string(from: date)
     }
     private var emptyInbox: some View {
         let hasOtherPending = selectedDay != nil && library.photos.contains { !library.session.reviewed.contains($0.id) }
@@ -303,6 +271,7 @@ struct DailyPhotoInboxView: View {
     private var calendarSheet: some View {
         NavigationStack {
             PhotoCountCalendar(assets: library.photos, language: store.appLanguage, selection: $calendarDay, reviewed: library.session.reviewed, onToday: { selectedDay = nil; showCalendar = false }, onRestart: { date in
+                    selectedDay = Calendar.current.startOfDay(for: date)
                     restartIDs = library.photos.filter { $0.date.map { Calendar.current.isDate($0, inSameDayAs: date) } ?? false }.map(\.id)
                     showCalendar = false
                 })
@@ -314,7 +283,7 @@ struct DailyPhotoInboxView: View {
     private func dateLabel(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: store.appLanguage == .english ? "en_US" : "zh_CN")
-        formatter.dateFormat = store.appLanguage == .english ? "MMM d, EEE" : "M月d日 EEEE"
+        formatter.dateFormat = store.appLanguage == .english ? "MMM d, EEE" : "M月d日 EE"
         return formatter.string(from: date)
     }
     private func review(_ ids: [String]) { library.resumeReview(ids); showReview = true }

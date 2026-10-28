@@ -657,3 +657,40 @@ final class SortingReminderTests: XCTestCase {
         XCTAssertEqual(request.content.title, "整理照片")
     }
 }
+
+final class PhotoCalendarNavigationTests: XCTestCase {
+    func testMonthSwipeRequiresClearHorizontalMotion() {
+        XCTAssertEqual(PhotoCalendarNavigation.offset(for: CGSize(width: 90, height: 10)), -1)
+        XCTAssertEqual(PhotoCalendarNavigation.offset(for: CGSize(width: -90, height: 10)), 1)
+        XCTAssertNil(PhotoCalendarNavigation.offset(for: CGSize(width: 40, height: 0)))
+        XCTAssertNil(PhotoCalendarNavigation.offset(for: CGSize(width: 60, height: 80)))
+        XCTAssertNil(PhotoCalendarNavigation.offset(for: CGSize(width: 60, height: 50)))
+    }
+    func testMonthPagingClampsFutureAndUsesMonthStartsAcrossYear() {
+        var calendar = Calendar(identifier: .gregorian); calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let today = ISO8601DateFormatter().date(from: "2026-01-31T12:00:00Z")!
+        let previous = PhotoCalendarNavigation.month(by: -1, from: today, today: today, calendar: calendar)!
+        XCTAssertEqual(calendar.component(.year, from: previous), 2025)
+        XCTAssertEqual(calendar.component(.month, from: previous), 12)
+        XCTAssertEqual(calendar.component(.day, from: previous), 1)
+        let restored = PhotoCalendarNavigation.month(by: 1, from: previous, today: today, calendar: calendar)!
+        XCTAssertEqual(calendar.component(.month, from: restored), 1)
+        XCTAssertNil(PhotoCalendarNavigation.month(by: 1, from: restored, today: today, calendar: calendar))
+    }
+    func testProgressBelongsToPendingDayEvenWhenTodayIsComplete() {
+        let calendar = Calendar.current, today = Date()
+        let previous = calendar.date(byAdding: .day, value: -1, to: today)!
+        let photos = [LibraryPhoto(id: "today", date: today, isScreenshot: false, isLivePhoto: false),
+                      LibraryPhoto(id: "done", date: previous, isScreenshot: false, isLivePhoto: false),
+                      LibraryPhoto(id: "left", date: previous, isScreenshot: false, isLivePhoto: false)]
+        let batch = PhotoInboxBatch(today: today, selectedDay: nil, assets: photos, reviewed: ["today", "done"])
+        XCTAssertEqual(batch.items.map(\.id), ["left"])
+        XCTAssertEqual(batch.progress, 0.5); XCTAssertEqual(batch.completed, 1); XCTAssertEqual(batch.total, 2)
+    }
+    func testUndatedProgressIncludesReviewedMembers() {
+        let photos = [LibraryPhoto(id: "done", date: nil, isScreenshot: false, isLivePhoto: false),
+                      LibraryPhoto(id: "left", date: nil, isScreenshot: true, isLivePhoto: false)]
+        let batch = PhotoInboxBatch(today: Date(), selectedDay: nil, assets: photos, reviewed: ["done"])
+        XCTAssertNil(batch.date); XCTAssertEqual(batch.progress, 0.5)
+    }
+}
