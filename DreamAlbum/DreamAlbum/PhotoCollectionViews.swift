@@ -9,15 +9,40 @@ struct PhotoGroupsView: View {
     @State private var title = ""
     @State private var editing: LibraryGroup?
     @State private var infoGroup: LibraryGroup?
+    @AppStorage("dream_album.hide_readonly_groups") private var hideReadOnlyGroups = false
+    private var visibleGroups: [LibraryGroup] { library.groups.filter { !hideReadOnlyGroups || $0.isEditable } }
     private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
     var body: some View {
         VStack(spacing: 0) {
+            HStack {
+                if library.hasAccess {
+                    Text(c("\(visibleGroups.count) 个分组", "\(visibleGroups.count) albums"))
+                        .font(.subheadline).foregroundStyle(.secondary).fixedSize()
+                }
+                Spacer()
+                Menu {
+                    Toggle(c("隐藏不可编辑分组", "Hide read-only albums"), isOn: $hideReadOnlyGroups)
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease")
+                        .foregroundStyle(hideReadOnlyGroups ? LibraryStyle.mint : Color.secondary)
+                        .frame(width: 40, height: 40).background(LibraryStyle.surface, in: Circle())
+                        .frame(width: 44, height: 44).contentShape(Rectangle())
+                }.buttonStyle(.plain).accessibilityLabel(c("筛选分组", "Filter albums"))
+                    .accessibilityValue(hideReadOnlyGroups ? c("仅可编辑", "Editable only") : c("全部分组", "All albums"))
+                    .accessibilityIdentifier("group.filters").disabled(!library.hasAccess)
+                Button { title = ""; newGroup = true } label: {
+                    Image(systemName: "plus").font(.title3.weight(.medium)).foregroundStyle(LibraryStyle.background)
+                        .frame(width: 40, height: 40).background(LibraryStyle.mint, in: Circle())
+                        .frame(width: 44, height: 44).contentShape(Rectangle())
+                }.buttonStyle(.plain).accessibilityLabel(c("新建分组", "New album"))
+                    .disabled(!library.hasAccess || library.isChanging)
+            }.padding(.horizontal, 24).padding(.top, 8)
             LimitedPhotosBanner()
             if !library.hasAccess { LibraryPermissionView() }
             else {
                 List {
-                    if library.groups.isEmpty { Text(c("暂无分组", "No albums")) }
-                    ForEach(library.groups) { group in
+                    if visibleGroups.isEmpty { Text(hideReadOnlyGroups ? c("暂无可编辑分组", "No editable albums") : c("暂无分组", "No albums")) }
+                    ForEach(visibleGroups) { group in
                         HStack(spacing: 8) {
                             NavigationLink {
                                 PhotoBrowserView(group: group).libraryErrorAlert()
@@ -56,16 +81,12 @@ struct PhotoGroupsView: View {
                     if library.authorization == .limited {
                         Button(c("完整访问可查看其他相册", "Full access shows other albums")) { openPhotoSettings() }
                     }
-                }.scrollContentBackground(.hidden)
+                }.scrollContentBackground(.hidden).contentMargins(.top, 18, for: .scrollContent)
             }
         }
-        .background(LibraryStyle.background).navigationTitle(c("分组", "Albums"))
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button { title = ""; newGroup = true } label: { Image(systemName: "plus") }
-                    .accessibilityLabel(c("新建分组", "New album")).disabled(!library.hasAccess || library.isChanging)
-            }
-        }
+        .background(LibraryStyle.background).navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .task { await library.activate() }
         .alert(c("新建分组", "New album"), isPresented: $newGroup) {
             TextField(c("分组名称", "Album name"), text: $title)
@@ -261,17 +282,18 @@ struct DreamGalleryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 HStack {
-                    Text(c("梦想画册", "Dream albums")).font(.system(size: 32, weight: .bold))
+                    Text(c("\(store.activeDreams.count) 本画册", "\(store.activeDreams.count) albums"))
+                        .font(.subheadline).foregroundStyle(.secondary)
                     Spacer()
                     Button { newDream = true } label: {
                         Image(systemName: "plus").font(.title3.weight(.medium)).foregroundStyle(LibraryStyle.background)
                             .frame(width: 40, height: 40).background(LibraryStyle.mint, in: Circle())
                     }.buttonStyle(.plain).accessibilityLabel(c("新建梦想画册", "New dream album"))
-                }.padding(.horizontal, 20).padding(.top, 8)
+                }
                 if store.activeDreams.isEmpty {
                     ContentUnavailableView(c("暂无画册", "No dream albums"), systemImage: "book", description: Text(c("添加照片，创建画册。", "Add photos to create an album.")))
                 }
-                LazyVStack(spacing: 16) {
+                LazyVStack(spacing: 20) {
                     ForEach(store.activeDreams) { dream in
                         NavigationLink(value: dream.id) { cover(dream) }.buttonStyle(.plain)
                             .contextMenu {
@@ -285,10 +307,13 @@ struct DreamGalleryView: View {
                                 store.moveDream(draggedID, before: dream.id); self.draggedID = nil; return true
                             }
                     }
-                }.padding(.horizontal, 14)
-            }.padding(.bottom, 24)
+                }
+            }
+            .frame(maxWidth: 700)
+            .padding(.horizontal, 24).padding(.top, 8).padding(.bottom, 24)
+            .frame(maxWidth: .infinity)
         }
-        .background(LibraryStyle.background).navigationTitle(c("梦想画册", "Dream albums"))
+        .background(LibraryStyle.background).navigationTitle("")
         .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(for: UUID.self) { id in
             if let dream = store.dreams.first(where: { $0.id == id }) { DreamDetailView(dream: dream).toolbar(.visible, for: .navigationBar) }
@@ -311,7 +336,7 @@ struct DreamGalleryView: View {
             DreamCoverImage(path: dream.imagePaths.first).allowsHitTesting(false).accessibilityHidden(true)
             LinearGradient(colors: [.clear, .black.opacity(0.88)], startPoint: .center, endPoint: .bottom)
             VStack(alignment: .leading, spacing: 8) {
-                Text(dream.title).font(.title2.bold()).foregroundStyle(.white)
+                Text(dream.title).font(.title2.bold()).foregroundStyle(.white).lineLimit(2)
                 HStack {
                     Text(dream.imagePaths.first?.hasPrefix("sample:") == true ? c("内置示例画面", "Built-in sample") : c("已保存独立副本 · \(dream.imagePaths.count) 张照片", "Independent copies · \(dream.imagePaths.count) photos")).font(.caption).foregroundStyle(.white.opacity(0.76))
                     Spacer()
@@ -319,8 +344,9 @@ struct DreamGalleryView: View {
                 }
             }.padding(20)
         }
-        .frame(height: 350).clipShape(RoundedRectangle(cornerRadius: 14))
-        .contentShape(RoundedRectangle(cornerRadius: 14))
+        .frame(maxWidth: .infinity).frame(height: 350)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .contentShape(RoundedRectangle(cornerRadius: 20))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(dream.title + "，" + (dream.imagePaths.first?.hasPrefix("sample:") == true
             ? c("内置示例画面", "Built-in sample")

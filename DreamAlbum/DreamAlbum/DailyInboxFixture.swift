@@ -27,6 +27,7 @@ final class DailyInboxFixture: PhotoLibraryService {
         let defaults = UserDefaults(suiteName: name)!
         if ProcessInfo.processInfo.arguments.contains("-resetDailyFixture") {
             defaults.removePersistentDomain(forName: name)
+            UserDefaults.standard.removeObject(forKey: "dream_album.hide_readonly_groups")
             var session = PhotoReviewSession()
             let today = fixture.assets.filter { $0.date.map { Calendar.current.isDateInToday($0) } ?? false }
             session.resume(today.map(\.id))

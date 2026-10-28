@@ -97,6 +97,8 @@ struct DailyPhotoInboxView: View {
     @State private var calendarDay = Date()
     @State private var restartIDs: [String]?
     @State private var showAllPhotos = false
+    @State private var browsingIDs: Set<String>?
+    @State private var browsingTitle: String?
     @State private var showReview = false
     @State private var showPending = false
     @State private var lastActiveDay = Calendar.current.startOfDay(for: Date())
@@ -124,7 +126,7 @@ struct DailyPhotoInboxView: View {
                         }
                     }
                     .frame(maxWidth: 700, alignment: .leading)
-                    .padding(.horizontal, 20).padding(.top, 32).padding(.bottom, 24)
+                    .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 24)
                     .frame(maxWidth: .infinity)
                 }
                 if library.hasAccess && !current.items.isEmpty { actionBar(current) }
@@ -133,7 +135,7 @@ struct DailyPhotoInboxView: View {
         .background(LibraryStyle.background)
         .navigationTitle(c("首页", "Home"))
         .toolbar(.hidden, for: .navigationBar)
-        .navigationDestination(isPresented: $showAllPhotos) { PhotoBrowserView().libraryErrorAlert() }
+        .navigationDestination(isPresented: $showAllPhotos) { PhotoBrowserView(scopeIDs: browsingIDs, scopeTitle: browsingTitle).libraryErrorAlert() }
         .fullScreenCover(isPresented: $showReview) { NavigationStack { PhotoReviewView() } }
         .sheet(isPresented: $showPending) { NavigationStack { PendingPhotosView() } }
         .sheet(isPresented: $showCalendar, onDismiss: {
@@ -152,30 +154,37 @@ struct DailyPhotoInboxView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in selectedDay = nil }
     }
     private func header(_ current: PhotoInboxBatch) -> some View {
-        VStack(alignment: .leading, spacing: 24) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(c("整理照片", "Review photos")).font(.system(size: 32, weight: .bold))
-                Spacer(minLength: 12)
-                Button { showAllPhotos = true } label: {
-                    HStack(spacing: 5) { Text(c("全部照片", "All photos")); Image(systemName: "chevron.right").font(.caption) }
-                }.font(.subheadline.weight(.medium)).frame(minHeight: 44)
-                    .accessibilityIdentifier("today.all")
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                dateButton(current)
+                Spacer(minLength: 0)
+                pendingButton
+                allPhotosButton
             }
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 12) { dateButton(current); Spacer(minLength: 0); pendingButton }
-                VStack(alignment: .leading, spacing: 8) { dateButton(current); pendingButton }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack { dateButton(current); Spacer(minLength: 8); allPhotosButton }
+                HStack { Spacer(); pendingButton }
             }
         }
+    }
+    private var allPhotosButton: some View {
+        Button { openLibrary() } label: {
+            Label(c("全部照片", "All photos"), systemImage: "square.grid.2x2")
+                .font(.subheadline.weight(.medium)).fixedSize()
+                .padding(.horizontal, 10).frame(minHeight: 44)
+                .background(LibraryStyle.surface, in: Capsule())
+        }.buttonStyle(.plain).foregroundStyle(LibraryStyle.mint)
+            .accessibilityLabel(c("全部照片", "All photos")).accessibilityIdentifier("today.all")
     }
     private func dateButton(_ current: PhotoInboxBatch) -> some View {
         let displayedDate = current.date ?? (current.items.isEmpty ? selectedDay : nil)
         return Button { calendarDay = displayedDate ?? selectedDay ?? Date(); showCalendar = true } label: {
             HStack(spacing: 8) {
                 Image(systemName: "calendar")
-                Text(displayedDate.map(dateLabel) ?? (current.items.isEmpty ? c("选择日期", "Choose date") : c("日期未知", "Undated")))
+                Text(displayedDate.map(shortDateLabel) ?? (current.items.isEmpty ? c("选择日期", "Choose date") : c("日期未知", "Undated")))
                     .accessibilityIdentifier("today.date")
                 Image(systemName: "chevron.down").font(.caption2.weight(.semibold))
-            }.font(.subheadline).foregroundStyle(.primary).padding(.horizontal, 14).frame(minHeight: 44)
+            }.font(.subheadline).foregroundStyle(.primary).fixedSize().padding(.horizontal, 10).frame(minHeight: 44)
                 .background(LibraryStyle.surface, in: Capsule())
         }.buttonStyle(.plain).accessibilityLabel(c("选择日期", "Choose date"))
             .accessibilityValue(displayedDate.map(dateLabel) ?? c("日期未知", "Undated"))
@@ -187,20 +196,26 @@ struct DailyPhotoInboxView: View {
                 Image(systemName: "tray")
                 Text(c("待删", "Pending"))
                 Text("\(library.session.pendingDeletion.count)").monospacedDigit().fontWeight(.semibold)
-            }.font(.subheadline).padding(.horizontal, 12).frame(minHeight: 40)
+            }.font(.subheadline).fixedSize().padding(.horizontal, 10).frame(minHeight: 44)
                 .background(LibraryStyle.surface, in: Capsule())
         }.buttonStyle(.plain).foregroundStyle(LibraryStyle.mint)
             .accessibilityLabel(c("待删 \(library.session.pendingDeletion.count)", "Pending \(library.session.pendingDeletion.count)"))
             .accessibilityIdentifier("today.pending")
     }
     private func collection(title: String, icon: String, assets: [LibraryPhoto], identifier: String) -> some View {
-        Button { review(assets.map(\.id)) } label: {
-            VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 14) {
+            Button {
+                browsingIDs = Set(assets.map(\.id)); browsingTitle = title; showAllPhotos = true
+            } label: {
                 HStack(spacing: 10) {
                     Label(title, systemImage: icon).font(.title3.bold()).foregroundStyle(.primary)
                     Spacer()
                     Image(systemName: "chevron.right").font(.subheadline).foregroundStyle(.secondary)
-                }.frame(minHeight: 32)
+                }.frame(minHeight: 44).contentShape(Rectangle())
+            }.buttonStyle(.plain).accessibilityIdentifier(identifier + ".browse")
+                .accessibilityLabel(c("查看\(title)", "Browse \(title)"))
+            Button { review(assets.map(\.id)) } label: {
+                Group {
                 if let photo = assets.first, assets.count == 1 {
                     LibraryThumbnail(id: photo.id, hero: true)
                         .aspectRatio(4.0 / 3.0, contentMode: .fit)
@@ -222,11 +237,13 @@ struct DailyPhotoInboxView: View {
                         }
                     }.allowsHitTesting(false).accessibilityHidden(true)
                 }
-            }.contentShape(Rectangle())
-        }.buttonStyle(.plain)
-            .accessibilityLabel(c("\(title)，待整理 \(assets.count) 张", "\(title), \(assets.count) remaining"))
-            .accessibilityIdentifier(identifier)
+                }.contentShape(Rectangle())
+            }.buttonStyle(.plain)
+                .accessibilityLabel(c("\(title)，待整理 \(assets.count) 张", "\(title), \(assets.count) remaining"))
+                .accessibilityIdentifier(identifier)
+        }
     }
+    private func openLibrary() { browsingIDs = nil; browsingTitle = nil; showAllPhotos = true }
     private func actionBar(_ current: PhotoInboxBatch) -> some View {
         return HStack(spacing: 12) {
             ZStack {
@@ -264,7 +281,7 @@ struct DailyPhotoInboxView: View {
             if hasOtherPending {
                 Button(c("返回待整理", "Back to pending photos")) { selectedDay = nil }.padding(.top, 4)
             } else {
-                Button(c("查看全部照片", "View all photos")) { showAllPhotos = true }.padding(.top, 4)
+                Button(c("查看全部照片", "View all photos")) { openLibrary() }.padding(.top, 4)
             }
         }.frame(maxWidth: .infinity).padding(.vertical, 70)
     }
@@ -279,6 +296,12 @@ struct DailyPhotoInboxView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button(c("完成", "Done")) { selectedDay = Calendar.current.isDateInToday(calendarDay) ? nil : calendarDay; showCalendar = false } } }
         }.presentationDetents([.large])
+    }
+    private func shortDateLabel(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: store.appLanguage == .english ? "en_US" : "zh_CN")
+        formatter.dateFormat = store.appLanguage == .english ? "MMM d" : "M月d日"
+        return formatter.string(from: date)
     }
     private func dateLabel(_ date: Date) -> String {
         let formatter = DateFormatter()

@@ -76,12 +76,14 @@ struct SettingsView: View {
                 }.listRowBackground(LibraryStyle.surface)
             }
             .listStyle(.insetGrouped)
+            .contentMargins(.top, 8, for: .scrollContent)
             .scrollContentBackground(.hidden)
             .background(LibraryStyle.background)
-            .navigationTitle(copy("我的", "Me"))
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: UUID.self) { id in
-                if let dream = store.dreams.first(where: { $0.id == id }) { DreamDetailView(dream: dream) }
+                if let dream = store.dreams.first(where: { $0.id == id }) { DreamDetailView(dream: dream).toolbar(.visible, for: .navigationBar) }
             }
             .sheet(isPresented: $isShowingPremium) {
                 PremiumUnlockSheet().environmentObject(store).environmentObject(purchaseStore)

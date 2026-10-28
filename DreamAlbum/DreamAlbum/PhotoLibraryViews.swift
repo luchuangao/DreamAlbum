@@ -331,7 +331,7 @@ struct PhotoBrowserView: View {
     private var photoGrid: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text(selecting || onPick != nil ? c("横滑或双指拖动可多选", "Swipe across or drag with two fingers to select") : c("\(filtered.count) 张", "\(filtered.count) photos"))
+                Text(c("\(filtered.count) 张", "\(filtered.count) photos"))
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer(minLength: 8)
                 if selecting || onPick != nil {
@@ -643,9 +643,6 @@ struct PendingPhotosView: View {
                         Button(c("取消待删", "Unmark")) { library.unmark(photo.id) }.buttonStyle(.borderless)
                     }
                 }
-            }
-            if !library.session.pendingDeletion.isEmpty {
-                Button(c("清空待删清单", "Clear pending list")) { library.clearPending() }
             }
         }
         .navigationTitle(c("待删清单", "Pending deletions")).navigationBarTitleDisplayMode(.inline)

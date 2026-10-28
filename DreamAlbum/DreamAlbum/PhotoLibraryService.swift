@@ -17,6 +17,7 @@ struct LibraryGroup: Identifiable, Equatable, Sendable {
     let canRename: Bool
     let canDelete: Bool
     var isSystem = false
+    var isEditable: Bool { canAdd || canRemove || canRename || canDelete }
 }
 
 struct LibrarySnapshot: Sendable {
