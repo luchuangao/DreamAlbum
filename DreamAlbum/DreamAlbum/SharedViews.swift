@@ -21,6 +21,41 @@ extension EnvironmentValues {
     }
 }
 
+struct PhotoSourceMenu: View {
+    @EnvironmentObject private var store: DreamStore
+    @Environment(\.albumTheme) private var theme
+    @Binding var showingLibrary: Bool
+    @Binding var showingCamera: Bool
+    @State private var showingSources = false
+    var iconOnly = false
+    var identifier = "photo.source"
+    private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
+    var body: some View {
+        Button { showingSources = true } label: {
+            if iconOnly {
+                Image(systemName: "camera.fill").font(.headline)
+                    .frame(width: 44, height: 44).background(theme.accent, in: Circle())
+                    .foregroundStyle(theme.background)
+            } else {
+                Label(c("拍照", "Camera"), systemImage: "camera")
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).foregroundStyle(theme.accent)
+            }
+        }
+        .buttonStyle(.borderless)
+        .confirmationDialog(c("拍照", "Camera"), isPresented: $showingSources, titleVisibility: .hidden) {
+            Button(c("从相册添加", "Add from Library"), systemImage: "photo.on.rectangle") { showingLibrary = true }
+                .accessibilityIdentifier("photo.source.library")
+            if CameraCaptureView.isCameraAvailable {
+                Button(c("拍照", "Take Photo"), systemImage: "camera") { showingCamera = true }
+                    .accessibilityIdentifier("photo.source.camera")
+            }
+            Button(c("取消", "Cancel"), role: .cancel) { }
+        }
+        .accessibilityLabel(c("拍照", "Camera"))
+        .accessibilityIdentifier(identifier)
+    }
+}
+
 struct CameraCaptureView: UIViewControllerRepresentable {
     static var isCameraAvailable: Bool {
         #if targetEnvironment(macCatalyst)

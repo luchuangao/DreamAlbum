@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Photos
 
 enum PhotoSwipeGesture {
     static func commits(translation: CGSize, velocity: CGSize = .zero, width: CGFloat) -> Bool {
@@ -18,6 +19,7 @@ struct NativePhotoZoom: UIViewRepresentable {
     let id: String
     let service: any PhotoLibraryService
     let language: AppLanguage
+    var fullResolution = false
     var nextID: String? = nil
     var onWillSwipe: ((Bool) -> Bool)? = nil
     var onSwipe: ((Bool) -> Void)? = nil
@@ -34,6 +36,9 @@ struct NativePhotoZoom: UIViewRepresentable {
     }
     func updateUIView(_ view: PhotoZoomScrollView, context: Context) {
         view.retry.tintColor = UIColor(theme.accent)
+        view.maximumZoomScale = fullResolution ? 8 : 4
+        view.accessibilityIdentifier = fullResolution ? "library.original" : "library.preview"
+        let size = fullResolution ? PHImageManagerMaximumSize : CGSize(width: 1600, height: 2000)
         let coordinator = context.coordinator
         view.onSwipe = onSwipe
         view.onWillSwipe = onWillSwipe
@@ -42,15 +47,15 @@ struct NativePhotoZoom: UIViewRepresentable {
         view.loadingLabel = AlbumCopy.pick(language, "加载中", "Loading")
         view.transitionLabel = AlbumCopy.pick(language, "正在切换", "Changing")
         view.photo.accessibilityIdentifier = "preview.photo." + id
-        if coordinator.id != id {
+        if coordinator.id != id || coordinator.targetSize != size {
             coordinator.id = id
-            coordinator.load(view, id: id, service: service)
+            coordinator.load(view, id: id, service: service, targetSize: size)
             view.onRetry = { [weak view, weak coordinator] in
                 guard let view, let coordinator else { return }
-                coordinator.load(view, id: id, service: service)
+                coordinator.load(view, id: id, service: service, targetSize: size)
             }
         }
-        coordinator.preloadNext(nextID, service: service)
+        coordinator.preloadNext(fullResolution ? nil : nextID, service: service)
     }
     static func dismantleUIView(_ view: PhotoZoomScrollView, coordinator: Coordinator) {
         coordinator.cancel()
@@ -59,9 +64,11 @@ struct NativePhotoZoom: UIViewRepresentable {
         view.onWillSwipe = nil
         view.onSwipe = nil
         view.onLoaded = nil
+        view.resetPhoto()
     }
     @MainActor final class Coordinator: NSObject, UIScrollViewDelegate {
         var id: String?
+        var targetSize = CGSize.zero
         var request: Task<Void, Never>?
         private var upcomingID: String?
         private var preload: Task<Void, Never>?
@@ -91,20 +98,21 @@ struct NativePhotoZoom: UIViewRepresentable {
             (scrollView as? PhotoZoomScrollView)?.centerPhoto()
             scrollView.accessibilityValue = "\(Int((scrollView.zoomScale * 100).rounded()))%"
         }
-        func load(_ view: PhotoZoomScrollView, id: String, service: any PhotoLibraryService) {
+        func load(_ view: PhotoZoomScrollView, id: String, service: any PhotoLibraryService, targetSize: CGSize = CGSize(width: 1600, height: 2000)) {
             request?.cancel()
+            self.targetSize = targetSize
             view.resetPhoto()
             view.retry.isHidden = true
             view.spinner.startAnimating()
             view.progress.isHidden = true
-            let ready = cached?.id == id ? cached?.image : nil
+            let ready = targetSize != PHImageManagerMaximumSize && cached?.id == id ? cached?.image : nil
             if ready != nil { cached = nil }
             request = Task { [weak self, weak view] in
                 do {
                     let image: UIImage
                     if let ready { image = ready }
                     else {
-                        image = try await service.image(id: id, size: CGSize(width: 1600, height: 2000)) { [weak view] value in
+                        image = try await service.image(id: id, size: targetSize) { [weak view] value in
                             view?.progress.isHidden = false
                             view?.progress.text = "\(Int(value * 100))%"
                         }

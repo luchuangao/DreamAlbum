@@ -39,6 +39,7 @@ final class DailyInboxFixture: PhotoLibraryService {
             let seededIDs = arguments.contains("-homeDateTaskFixture") ? ["todayDone", "dayDone"] : reviewedIDs
             for id in seededIDs where fixture.assets.contains(where: { $0.id == id }) { session.decide(id, delete: false) }
             if arguments.contains("-homeDateTaskFixture") { session.decide("dayDone", delete: true) }
+            for photo in fixture.assets where photo.id.hasPrefix("pending-fixture-") { session.decide(photo.id, delete: true) }
             defaults.set(try? JSONEncoder().encode(session), forKey: "dream_album.photo_review.v1")
         }
         return PhotoLibraryStore(service: fixture, defaults: defaults)
@@ -63,6 +64,14 @@ final class DailyInboxFixture: PhotoLibraryService {
                       LibraryPhoto(id: "older", date: calendar.date(byAdding: .month, value: -1, to: yesterday), isScreenshot: false, isLivePhoto: false)]
         }
         assets = photos
+        let args = ProcessInfo.processInfo.arguments
+        if let index = args.firstIndex(of: "-fixturePendingCount"), args.indices.contains(index + 1),
+           let count = Int(args[index + 1]) {
+            let day = calendar.date(byAdding: .day, value: -3, to: today)!
+            assets += (0..<min(max(count, 0), 10000)).map {
+                LibraryPhoto(id: "pending-fixture-\($0)", date: day, isScreenshot: false, isLivePhoto: false)
+            }
+        }
     }
     func requestAccess() async -> PHAuthorizationStatus { authorization }
     func snapshot() async -> LibrarySnapshot {

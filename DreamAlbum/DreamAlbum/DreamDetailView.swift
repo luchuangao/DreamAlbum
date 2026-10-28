@@ -54,6 +54,7 @@ struct DreamDetailView: View {
     @State private var recordImagePaths: [String] = []
     @State private var selectedAlbumPhotos: [PhotosPickerItem] = []
     @State private var isShowingAlbumCamera = false
+    @State private var isShowingAlbumLibrary = false
     @State private var isShowingRecordCamera = false
     @State private var previewImage: ImagePreview?
     @State private var editingLog: DreamLog?
@@ -1008,31 +1009,10 @@ struct DreamDetailView: View {
                 }
                 Spacer()
                 if !dream.isArchived {
-                    HStack(spacing: 8) {
-                        PhotosPicker(selection: $selectedAlbumPhotos, matching: .images) {
-                            Label(copy("从相册添加", "Add from Library"), systemImage: "photo.on.rectangle")
-                                .labelStyle(.iconOnly)
-                                .font(.headline)
-                                .frame(width: 44, height: 44)
-                                .background(theme.accent, in: Circle())
-                                .foregroundStyle(theme.background)
-                        }
-                        .onChange(of: selectedAlbumPhotos) { _, items in
-                            Task { await importAlbumImages(from: items) }
-                        }
-
-                        if CameraCaptureView.isCameraAvailable {
-                            Button {
-                                isShowingAlbumCamera = true
-                            } label: {
-                                Label(copy("拍照添加", "Take Photo"), systemImage: "camera.fill")
-                                    .labelStyle(.iconOnly)
-                                    .font(.headline)
-                                    .frame(width: 44, height: 44)
-                                    .background(theme.accent, in: Circle())
-                                    .foregroundStyle(theme.background)
-                            }
-                        }
+                    PhotoSourceMenu(showingLibrary: $isShowingAlbumLibrary, showingCamera: $isShowingAlbumCamera, iconOnly: true, identifier: "dream.addPhotos")
+                    .photosPicker(isPresented: $isShowingAlbumLibrary, selection: $selectedAlbumPhotos, matching: .images)
+                    .onChange(of: selectedAlbumPhotos) { _, items in
+                        Task { await importAlbumImages(from: items) }
                     }
                 }
             }

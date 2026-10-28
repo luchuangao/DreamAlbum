@@ -508,6 +508,7 @@ struct PhotoReviewView: View {
     @State private var cardWidth: CGFloat = 400
     @State private var showPending = false
     @State private var destination: LibraryDestination?
+    @State private var originalPhoto: LibraryPhoto?
     private var current: String? { exitingID ?? library.session.queue.first { !library.session.reviewed.contains($0) && library.photoByID[$0] != nil } }
     private var finished: Bool { library.hasAccess && !library.isLoading && current == nil }
     private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
@@ -530,6 +531,11 @@ struct PhotoReviewView: View {
                         .offset(x: translation.width)
                         .rotationEffect(.degrees(reduceMotion ? 0 : Double(max(-6, min(6, translation.width / 40)))))
                         .opacity(exitingID != nil && reduceMotion ? 0 : 1)
+                        .onTapGesture { openOriginal(id) }
+                        .accessibilityLabel(c("照片", "Photo"))
+                        .accessibilityHint(c("轻点查看原图", "Tap to view full size"))
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityAction { openOriginal(id) }
                         .overlay(alignment: .top) {
                             if abs(translation.width) > 35 {
                                 Text(translation.width < 0 ? c("移至待删", "Mark for deletion") : c("留在相册", "Keep photo"))
@@ -577,6 +583,9 @@ struct PhotoReviewView: View {
             if complete { dismiss(); returnToPhotoHome() }
         }
         .sheet(isPresented: $showPending) { NavigationStack { PendingPhotosView() } }
+        .fullScreenCover(item: $originalPhoto) { photo in
+            NavigationStack { ReviewOriginalPhotoView(id: photo.id) }
+        }
         .fullScreenCover(item: $destination) { target in
             if let current { NavigationStack {
                 switch target {
@@ -590,13 +599,17 @@ struct PhotoReviewView: View {
             HStack {
                 Button("Mark") { if let current { decide(current, delete: true) } }.keyboardShortcut(.leftArrow, modifiers: [])
                 Button("Keep") { if let current { decide(current, delete: false) } }.keyboardShortcut(.rightArrow, modifiers: [])
-            }.disabled(!loaded || exitingID != nil || showPending || destination != nil)
+            }.disabled(!loaded || exitingID != nil || showPending || destination != nil || originalPhoto != nil)
                 .frame(width: 0, height: 0).clipped().opacity(0).accessibilityHidden(true)
         }
         .preferredColorScheme(.light)
     }
-    private func decide(_ id: String, delete: Bool) {
+    private func openOriginal(_ id: String) {
         guard loaded, exitingID == nil, current == id else { return }
+        originalPhoto = library.photoByID[id]
+    }
+    private func decide(_ id: String, delete: Bool) {
+        guard loaded, exitingID == nil, current == id, originalPhoto == nil else { return }
         // Persist the decision at release. The outgoing card remains visible
         // only for the animation, so closing the page cannot lose the decision.
         exitingID = id
@@ -614,6 +627,28 @@ struct PhotoReviewView: View {
             var transaction = Transaction(); transaction.disablesAnimations = true
             withTransaction(transaction) { loaded = false; translation = .zero; exitingID = nil }
         }
+    }
+}
+
+struct ReviewOriginalPhotoView: View {
+    @EnvironmentObject private var library: PhotoLibraryStore
+    @EnvironmentObject private var store: DreamStore
+    @Environment(\.dismiss) private var dismiss
+    let id: String
+    var body: some View {
+        NativePhotoZoom(id: id, service: library.service, language: store.appLanguage, fullResolution: true)
+            .background(AlbumBackground())
+            .navigationTitle(AlbumCopy.pick(store.appLanguage, "原图", "Full-size photo"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.visible, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(AlbumCopy.pick(store.appLanguage, "完成", "Done")) { dismiss() }
+                        .accessibilityIdentifier("review.original.done")
+                        .keyboardShortcut(.escape, modifiers: [])
+                }
+            }
+            .preferredColorScheme(.light)
     }
 }
 

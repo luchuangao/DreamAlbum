@@ -358,39 +358,3 @@ struct DreamGalleryView: View {
             : c("已保存独立副本 · \(dream.imagePaths.count) 张照片", "Independent copies · \(dream.imagePaths.count) photos")))
     }
 }
-
-struct PhotoSettingsCard: View {
-    @Environment(\.albumTheme) private var theme
-    @EnvironmentObject private var library: PhotoLibraryStore
-    @EnvironmentObject private var store: DreamStore
-    @State private var pending = false
-    @State private var review = false
-    private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(c("照片管理", "Photo management")).font(.headline)
-            HStack {
-                Text(c("照片权限", "Photo access"))
-                Spacer()
-                Text(permissionLabel).foregroundStyle(.secondary)
-                Button(c("设置", "Settings")) { openPhotoSettings() }.frame(minWidth: 44, minHeight: 44)
-            }
-            if library.authorization == .limited { Button(c("管理可访问照片", "Manage accessible photos")) { manageLimitedPhotos() } }
-            Button { pending = true } label: { HStack { Label(c("待删清单", "Pending deletions"), systemImage: "tray"); Spacer(); Text("\(library.session.pendingDeletion.count)"); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary) }.frame(minHeight: 44).contentShape(Rectangle()) }
-            Button { review = true } label: { HStack { Label(c("继续整理", "Resume review"), systemImage: "arrow.left.arrow.right"); Spacer(); Text("\(library.session.completedCount) / \(library.session.queue.count)"); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary) }.frame(minHeight: 44).contentShape(Rectangle()) }
-                .disabled(library.session.queue.isEmpty || !library.hasAccess)
-        }
-        .buttonStyle(.plain).font(.subheadline).foregroundStyle(theme.primary).padding(18).background(theme.surface, in: RoundedRectangle(cornerRadius: 20)).tint(theme.accent)
-        .sheet(isPresented: $pending) { NavigationStack { PendingPhotosView() } }
-        .fullScreenCover(isPresented: $review) { NavigationStack { PhotoReviewView() } }
-    }
-    private var permissionLabel: String {
-        switch library.authorization {
-        case .authorized: return c("完整访问", "Full access")
-        case .limited: return c("部分照片", "Limited")
-        case .restricted: return c("系统限制", "Restricted")
-        case .denied: return c("未允许", "Denied")
-        default: return c("尚未授权", "Not requested")
-        }
-    }
-}

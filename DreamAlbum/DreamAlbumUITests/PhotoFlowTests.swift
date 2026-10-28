@@ -27,6 +27,19 @@ final class PhotoFlowTests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 10), .completed)
         return query.allElementsBoundByIndex.first { $0.isHittable }!
     }
+    private func cancelSystemPhotoPicker(presenter: XCUIElement, fromDetail: Bool = false) {
+        // iOS 26.5 can expose a zero-frame loading host in AX for a remote
+        // picker. Confirm the presenting control is covered, then use the X
+        // measured in captures of our portrait iPhone 17 Pro and iPad Pro.
+        let covered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == false"), object: presenter)
+        XCTAssertEqual(XCTWaiter.wait(for: [covered], timeout: 10), .completed)
+        capture("system-photo-picker")
+        let tablet = app.frame.width > 600
+        let point = tablet ? (fromDetail ? CGVector(dx: 96, dy: 318) : CGVector(dx: 32, dy: 84)) : CGVector(dx: 38, dy: 110)
+        app.coordinate(withNormalizedOffset: .zero).withOffset(point).tap()
+        let returned = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: presenter)
+        XCTAssertEqual(XCTWaiter.wait(for: [returned], timeout: 5), .completed)
+    }
     func visiblePhoto() -> XCUIElement {
         let query = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "library.photo."))
         let expectation = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
@@ -141,6 +154,7 @@ final class PhotoFlowTests: XCTestCase {
     func testSortingReminderToggleTimeAndPersistence() {
         launchDailyFixture()
         app.buttons["tab.me"].tap()
+        visibleButton("settings.reminders").tap()
         let toggle = app.switches["reminder.toggle"]
         if !toggle.isHittable { app.swipeUp() }
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
@@ -153,6 +167,7 @@ final class PhotoFlowTests: XCTestCase {
         capture("sorting-reminder-enabled")
         launchDailyFixture(reset: false)
         app.buttons["tab.me"].tap()
+        visibleButton("settings.reminders").tap()
         if !app.switches["reminder.toggle"].isHittable { app.swipeUp() }
         XCTAssertEqual(app.switches["reminder.toggle"].value as? String, "1")
         app.switches["reminder.toggle"].coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
@@ -269,6 +284,60 @@ final class PhotoFlowTests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["library.photo.p0"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["library.selection.title"].label, "全部照片")
     }
+    func testHomeHeaderKeepsAllPhotosBeforeLargePendingOnOneRow() {
+        for count in [13, 1000] {
+            app.terminate()
+            app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN", "-dailyInboxFixture", "-resetDailyFixture", "-fixturePendingCount", "\(count)"]
+            app.launch()
+            let date = visibleButton("today.calendar")
+            let all = visibleButton("today.all")
+            let pending = visibleButton("today.pending")
+            XCTAssertEqual(pending.label, "待删 \(count)")
+            XCTAssertLessThan(date.frame.midX, all.frame.midX)
+            XCTAssertLessThan(all.frame.midX, pending.frame.midX)
+            XCTAssertEqual(date.frame.midY, pending.frame.midY, accuracy: 2)
+            XCTAssertEqual(all.frame.midY, pending.frame.midY, accuracy: 2)
+            XCTAssertLessThanOrEqual(pending.frame.maxX, app.frame.maxX)
+            capture("home-header-pending-\(count)")
+            pending.tap()
+            XCTAssertTrue(app.navigationBars["待删清单"].waitForExistence(timeout: 5))
+            visibleButton("完成").tap()
+            all.tap()
+            XCTAssertTrue(app.staticTexts["library.selection.title"].waitForExistence(timeout: 5))
+        }
+    }
+    func testManagementPageGroupsPhotoAlbumAndSettingsActions() {
+        launchDailyFixture()
+        app.buttons["tab.me"].tap()
+        XCTAssertTrue(app.staticTexts["照片管理"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["画册管理"].exists)
+        XCTAssertFalse(app.switches["reminder.toggle"].exists)
+        XCTAssertFalse(app.buttons["继续整理"].exists)
+        capture("management-home")
+        visibleButton("management.pending").tap()
+        XCTAssertTrue(app.navigationBars["待删清单"].waitForExistence(timeout: 5))
+        visibleButton("完成").tap()
+        visibleButton("management.photos").tap()
+        XCTAssertTrue(app.staticTexts["library.selection.title"].waitForExistence(timeout: 5))
+        goBack()
+        visibleButton("management.groups").tap()
+        XCTAssertTrue(app.buttons["group.filters"].waitForExistence(timeout: 5))
+        goBack()
+        visibleButton("management.dreams").tap()
+        XCTAssertTrue(app.buttons["新建梦想画册"].waitForExistence(timeout: 5))
+        goBack()
+        visibleButton("management.archived").tap()
+        XCTAssertTrue(app.navigationBars["归档画册"].waitForExistence(timeout: 5))
+        capture("management-archive")
+        goBack()
+        visibleButton("management.albumSettings").tap()
+        XCTAssertTrue(app.switches["显示心情曲线"].waitForExistence(timeout: 5))
+        capture("management-album-settings")
+        goBack()
+        visibleButton("settings.reminders").tap()
+        XCTAssertTrue(app.switches["reminder.toggle"].waitForExistence(timeout: 5))
+        capture("management-reminders")
+    }
     func testThemeSelectionPersistsAcrossTabsAndRelaunch() {
         launchDailyFixture()
         let remaining = app.staticTexts["today.remaining"].label
@@ -380,6 +449,58 @@ final class PhotoFlowTests: XCTestCase {
         visibleButton("完成").tap()
         app.swipeRight()
         XCTAssertTrue(visibleButton("today.all").exists)
+    }
+    func testDreamPhotoSourceUsesOneCameraEntryInCreateAndDetail() {
+        launchDailyFixture()
+        app.buttons["tab.dreams"].tap()
+        visibleButton("新建梦想画册").tap()
+        XCTAssertTrue(app.navigationBars["创建梦想相册"].waitForExistence(timeout: 5))
+        XCTAssertEqual(visibleButton("dream.new.addPhotos").label, "拍照")
+        visibleButton("dream.new.addPhotos").tap()
+        capture("dream-new-photo-source")
+        visibleButton("从相册添加").tap()
+        cancelSystemPhotoPicker(presenter: app.buttons["dream.new.addPhotos"])
+        XCTAssertTrue(app.buttons["dream.new.addPhotos"].waitForExistence(timeout: 5))
+        visibleButton("取消").tap()
+        let cover = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "已保存独立副本")).firstMatch
+        XCTAssertTrue(cover.waitForExistence(timeout: 5)); cover.tap()
+        let entry = app.buttons["dream.addPhotos"]
+        for _ in 0..<5 where !entry.isHittable { app.swipeUp() }
+        XCTAssertEqual(visibleButton("dream.addPhotos").label, "拍照")
+        XCTAssertFalse(app.buttons["拍照添加"].exists)
+        visibleButton("dream.addPhotos").tap()
+        capture("dream-detail-photo-source")
+        visibleButton("从相册添加").tap()
+        cancelSystemPhotoPicker(presenter: app.buttons["dream.addPhotos"], fromDetail: true)
+        XCTAssertTrue(app.buttons["dream.addPhotos"].waitForExistence(timeout: 5))
+    }
+    func testReviewTapOriginalZoomAndReturnWithoutDecision() {
+        launchDailyFixture()
+        visibleButton("today.continue").tap()
+        let first = readyReviewPhoto().identifier
+        readyReviewPhoto().tap()
+        let preview = app.scrollViews["library.original"]
+        XCTAssertTrue(preview.waitForExistence(timeout: 8))
+        let original = readyPreviewPhoto().identifier
+        preview.doubleTap()
+        let zoomed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", "100%"), object: preview)
+        XCTAssertEqual(XCTWaiter.wait(for: [zoomed], timeout: 5), .completed)
+        preview.swipeLeft()
+        XCTAssertEqual(readyPreviewPhoto().identifier, original)
+        preview.doubleTap()
+        let fitted = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "100%"), object: preview)
+        XCTAssertEqual(XCTWaiter.wait(for: [fitted], timeout: 5), .completed)
+        preview.pinch(withScale: 3, velocity: 1)
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", "100%"), object: preview)], timeout: 5), .completed)
+        capture("review-original-zoom")
+        visibleButton("review.original.done").tap()
+        XCTAssertEqual(readyReviewPhoto().identifier, first)
+        XCTAssertEqual(visibleButton("review.pending").label, "待删 0")
+        readyReviewPhoto().swipeLeft()
+        XCTAssertNotEqual(readyReviewPhoto().identifier, first)
+        visibleButton("撤销").tap()
+        XCTAssertEqual(readyReviewPhoto().identifier, first)
+        capture("review-original-return")
     }
     func testReviewShortDragReturnsAndCommittedSwipeCanUndo() {
         launchDailyFixture()

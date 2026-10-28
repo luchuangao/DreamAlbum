@@ -182,7 +182,7 @@ final class SystemPhotoLibraryService: NSObject, PhotoLibraryService, PHPhotoLib
                 request.attach(continuation)
                 let options = PHImageRequestOptions()
                 options.deliveryMode = .highQualityFormat
-                options.resizeMode = .fast
+                options.resizeMode = size == PHImageManagerMaximumSize ? .none : .fast
                 options.isNetworkAccessAllowed = true
                 options.progressHandler = { value, _, _, _ in Task { @MainActor in progress(value) } }
                 request.setID(manager.requestImage(for: asset, targetSize: size, contentMode: .aspectFit, options: options) { image, info in

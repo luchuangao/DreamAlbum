@@ -6,106 +6,162 @@ struct SettingsView: View {
     @Environment(\.albumTheme) private var theme
     @AppStorage(AppTheme.storageKey) private var themeID = AppTheme.mistBlue.rawValue
     @EnvironmentObject private var store: DreamStore
-    @EnvironmentObject private var purchaseStore: PurchaseStore
-    @State private var isShowingPremium = false
-    private func copy(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
-    private var totalImages: Int { store.dreams.reduce(0) { $0 + $1.imagePaths.count + $1.logs.reduce(0) { $0 + $1.imagePaths.count } } }
-
+    @EnvironmentObject private var library: PhotoLibraryStore
+    @EnvironmentObject private var reminder: PhotoSortingReminder
+    @State private var showingPending = false
+    private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    HStack(spacing: 16) {
-                        ProfileAvatarPicker(size: 60)
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(copy("梦想相册", "Dream Album")).font(.title2.bold())
-                            Text(copy("管理照片与画册", "Manage photos and albums"))
-                                .font(.subheadline).foregroundStyle(.secondary)
+                    HStack(spacing: 12) {
+                        ProfileAvatarPicker(size: 42)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(c("照片与画册", "Photos & albums")).font(.headline)
+                            Text(library.hasAccess
+                                 ? c("\(library.photos.count) 张照片 · \(store.activeDreams.count) 本画册", "\(library.photos.count) photos · \(store.activeDreams.count) albums")
+                                 : c("\(store.activeDreams.count) 本画册", "\(store.activeDreams.count) albums"))
+                                .font(.caption).foregroundStyle(.secondary)
                         }
-                    }.padding(.vertical, 8)
-                    HStack {
-                        metric("\(store.activeDreams.count)", copy("活跃画册", "Active albums"))
-                        Spacer()
-                        metric("\(store.dreams.reduce(0) { $0 + $1.evidenceCount })", copy("成长记录", "Records"))
-                        Spacer()
-                        metric("\(totalImages)", copy("收藏画面", "Photos"))
-                    }.padding(.vertical, 6)
+                    }.padding(.vertical, 4)
                 }.listRowBackground(theme.surface)
-                Section { PhotoSettingsCard().listRowInsets(EdgeInsets()).listRowBackground(theme.surface) }
-                PhotoSortingReminderSection()
-                Section(copy("偏好设置", "Preferences")) {
-                    NavigationLink {
-                        AppThemePicker()
-                    } label: {
+                Section(c("照片管理", "Photo management")) {
+                    NavigationLink { PhotoBrowserView().libraryErrorAlert() } label: {
+                        managementRow("photo.on.rectangle", c("全部照片", "All photos"), library.hasAccess ? "\(library.photos.count)" : "—")
+                    }.accessibilityIdentifier("management.photos")
+                    NavigationLink { PhotoGroupsView().toolbar(.visible, for: .navigationBar) } label: {
+                        managementRow("folder", c("分组", "Albums"), "\(library.groups.count)")
+                    }.accessibilityIdentifier("management.groups")
+                    Button { showingPending = true } label: {
                         HStack {
-                            Text(copy("背景主题", "Background theme"))
-                            Spacer()
-                            Text(AppTheme.resolve(themeID).title(store.appLanguage)).foregroundStyle(.secondary)
-                        }
+                            managementRow("tray", c("待删清单", "Pending deletions"), "\(library.session.pendingDeletion.count)")
+                            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                        }.contentShape(Rectangle())
+                    }.accessibilityIdentifier("management.pending").buttonStyle(.plain)
+                }.listRowBackground(theme.surface)
+                Section(c("画册管理", "Dream albums")) {
+                    NavigationLink { DreamGalleryView().toolbar(.visible, for: .navigationBar) } label: {
+                        managementRow("book", c("梦想画册", "Dream albums"), "\(store.activeDreams.count)")
+                    }.accessibilityIdentifier("management.dreams")
+                    NavigationLink { ArchivedDreamAlbumsView() } label: {
+                        managementRow("archivebox", c("归档画册", "Archived albums"), "\(store.archivedDreams.count)")
+                    }.accessibilityIdentifier("management.archived")
+                    NavigationLink { AlbumPreferencesView() } label: {
+                        managementRow("slider.horizontal.3", c("画册设置", "Album settings"))
+                    }.accessibilityIdentifier("management.albumSettings")
+                }.listRowBackground(theme.surface)
+                Section {
+                    NavigationLink { SortingReminderSettingsView() } label: {
+                        managementRow("bell", c("提醒设置", "Reminders"), reminder.enabled || store.isDailyReminderEnabled ? c("已开启", "On") : c("已关闭", "Off"))
+                    }.accessibilityIdentifier("settings.reminders")
+                    NavigationLink { AppThemePicker() } label: {
+                        managementRow("paintpalette", c("背景主题", "Background theme"), AppTheme.resolve(themeID).title(store.appLanguage))
                     }.accessibilityIdentifier("settings.theme")
-                    Picker(copy("语言", "Language"), selection: $store.appLanguage) {
+                    Picker(selection: $store.appLanguage) {
                         ForEach(AppLanguage.allCases) { Text($0.title).tag($0) }
+                    } label: { Label(c("语言", "Language"), systemImage: "globe") }
+                    Button { openPhotoSettings() } label: {
+                        managementRow("lock.shield", c("照片权限", "Photo access"), permissionLabel)
+                    }.buttonStyle(.plain).accessibilityIdentifier("management.permissions")
+                    if library.authorization == .limited {
+                        Button(c("管理可访问照片", "Manage accessible photos")) { manageLimitedPhotos() }
                     }
-                    Picker(copy("成长足迹样式", "Footprint style"), selection: $store.timelineDisplayStyle) {
-                        ForEach(TimelineDisplayStyle.allCases) { Text($0.title(language: store.appLanguage)).tag($0) }
-                    }
-                    Toggle(copy("显示心情曲线", "Show mood curve"), isOn: $store.isMoodChartEnabled)
-                }.listRowBackground(theme.surface)
-                Section {
-                    Toggle(copy("梦想提醒", "Dream reminder"), isOn: $store.isDailyReminderEnabled)
-                    if store.isDailyReminderEnabled {
-                        DatePicker(copy("提醒时间", "Reminder time"), selection: $store.dailyReminderTime, displayedComponents: .hourAndMinute)
-                    }
-                } footer: { Text(copy("在当前设备提醒你回来看看梦想画面。", "A local reminder to revisit your dreams.")) }
-                    .listRowBackground(theme.surface)
-                Section(copy("归档画册", "Archived albums")) {
-                    if store.archivedDreams.isEmpty {
-                        Text(copy("暂无归档画册", "No archived albums")).foregroundStyle(.secondary)
-                    }
-                    ForEach(store.archivedDreams) { dream in
-                        NavigationLink(value: dream.id) {
-                            HStack(spacing: 12) {
-                                MagazineCollageView(paths: dream.imagePaths, cornerRadius: 10, showCountBadge: false).frame(width: 48, height: 48)
-                                Text(dream.title).foregroundStyle(.primary)
-                            }
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(copy("恢复", "Restore")) {
-                                if store.canCreateDream { store.restore(dream) } else { isShowingPremium = true }
-                            }.tint(theme.accent)
-                        }
-                        .contextMenu {
-                            Button(copy("恢复", "Restore"), systemImage: "arrow.uturn.backward") {
-                                if store.canCreateDream { store.restore(dream) } else { isShowingPremium = true }
-                            }
-                        }
-                    }
-                }.listRowBackground(theme.surface)
-                Section {
-                    Text(copy("画册图片独立保存，支持 iCloud 同步。整理进度仅保存在本机。", "Album images are independent copies with iCloud sync. Review progress stays on this device."))
-                        .font(.footnote).foregroundStyle(.secondary)
+                } header: { Text(c("设置", "Settings")) } footer: {
+                    Text(c("画册支持 iCloud 同步，整理进度保存在本机。", "Albums support iCloud sync. Review progress stays on this device."))
                 }.listRowBackground(theme.surface)
             }
-            .listStyle(.insetGrouped)
+            .listStyle(.insetGrouped).listSectionSpacing(20)
             .contentMargins(.top, 8, for: .scrollContent)
-            .scrollContentBackground(.hidden)
-            .background(AlbumBackground())
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden).background(AlbumBackground())
+            .navigationTitle("").navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: UUID.self) { id in
-                if let dream = store.dreams.first(where: { $0.id == id }) { DreamDetailView(dream: dream).toolbar(.visible, for: .navigationBar) }
-            }
-            .sheet(isPresented: $isShowingPremium) {
-                PremiumUnlockSheet().environmentObject(store).environmentObject(purchaseStore)
-            }
+            .sheet(isPresented: $showingPending) { NavigationStack { PendingPhotosView() } }
         }
     }
-    private func metric(_ value: String, _ title: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(value).font(.title2.bold()).monospacedDigit()
-            Text(title).font(.caption).foregroundStyle(.secondary)
+    private func managementRow(_ icon: String, _ title: String, _ value: String = "") -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).foregroundStyle(theme.accent).frame(width: 24)
+            Text(title).foregroundStyle(theme.primary)
+            Spacer(minLength: 8)
+            if !value.isEmpty { Text(value).font(.subheadline).foregroundStyle(.secondary).lineLimit(1) }
+        }.frame(minHeight: 32).contentShape(Rectangle())
+    }
+    private var permissionLabel: String {
+        switch library.authorization {
+        case .authorized: return c("完整访问", "Full access")
+        case .limited: return c("部分照片", "Limited")
+        case .restricted: return c("系统限制", "Restricted")
+        case .denied: return c("未允许", "Denied")
+        default: return c("尚未授权", "Not requested")
         }
+    }
+}
+
+private struct SortingReminderSettingsView: View {
+    @Environment(\.albumTheme) private var theme
+    @EnvironmentObject private var store: DreamStore
+    private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
+    var body: some View {
+        Form {
+            PhotoSortingReminderSection()
+            Section {
+                Toggle(c("梦想提醒", "Dream reminder"), isOn: $store.isDailyReminderEnabled)
+                if store.isDailyReminderEnabled {
+                    DatePicker(c("提醒时间", "Reminder time"), selection: $store.dailyReminderTime, displayedComponents: .hourAndMinute)
+                }
+            } footer: { Text(c("提醒你回来看看梦想画面。", "A reminder to revisit your dreams.")) }
+                .listRowBackground(theme.surface)
+        }.scrollContentBackground(.hidden).background(AlbumBackground())
+            .navigationTitle(c("提醒设置", "Reminders")).navigationBarTitleDisplayMode(.inline)
+            .toolbar(.visible, for: .navigationBar)
+    }
+}
+
+private struct AlbumPreferencesView: View {
+    @Environment(\.albumTheme) private var theme
+    @EnvironmentObject private var store: DreamStore
+    private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
+    var body: some View {
+        Form {
+            Section {
+                Picker(c("成长足迹样式", "Footprint style"), selection: $store.timelineDisplayStyle) {
+                    ForEach(TimelineDisplayStyle.allCases) { Text($0.title(language: store.appLanguage)).tag($0) }
+                }
+                Toggle(c("显示心情曲线", "Show mood curve"), isOn: $store.isMoodChartEnabled)
+            }.listRowBackground(theme.surface)
+        }.scrollContentBackground(.hidden).background(AlbumBackground())
+            .navigationTitle(c("画册设置", "Album settings")).navigationBarTitleDisplayMode(.inline)
+            .toolbar(.visible, for: .navigationBar)
+    }
+}
+
+private struct ArchivedDreamAlbumsView: View {
+    @Environment(\.albumTheme) private var theme
+    @EnvironmentObject private var store: DreamStore
+    @State private var showingPremium = false
+    private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
+    var body: some View {
+        List {
+            if store.archivedDreams.isEmpty { Text(c("暂无归档画册", "No archived albums")).foregroundStyle(.secondary) }
+            ForEach(store.archivedDreams) { dream in
+                NavigationLink { DreamDetailView(dream: dream).toolbar(.visible, for: .navigationBar) } label: {
+                    HStack(spacing: 12) {
+                        MagazineCollageView(paths: dream.imagePaths, cornerRadius: 10, showCountBadge: false).frame(width: 48, height: 48)
+                        Text(dream.title).foregroundStyle(.primary)
+                    }
+                }
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(c("恢复", "Restore")) { restore(dream) }.tint(theme.accent)
+                }
+                .contextMenu { Button(c("恢复", "Restore"), systemImage: "arrow.uturn.backward") { restore(dream) } }
+            }.listRowBackground(theme.surface)
+        }.scrollContentBackground(.hidden).background(AlbumBackground())
+            .navigationTitle(c("归档画册", "Archived albums")).navigationBarTitleDisplayMode(.inline)
+            .toolbar(.visible, for: .navigationBar)
+            .sheet(isPresented: $showingPremium) { PremiumUnlockSheet() }
+    }
+    private func restore(_ dream: Dream) {
+        if store.canCreateDream { store.restore(dream) } else { showingPremium = true }
     }
 }
 

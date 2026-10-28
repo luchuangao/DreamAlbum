@@ -2034,6 +2034,7 @@ struct NewDreamSheet: View {
     @State private var imagePaths: [String] = []
     @State private var isShowingPremium = false
     @State private var isShowingCamera = false
+    @State private var isShowingPhotoLibrary = false
 
     var body: some View {
         NavigationStack {
@@ -2051,22 +2052,10 @@ struct NewDreamSheet: View {
                 }
 
                 Section(copy("选择照片", "Photos")) {
-                    HStack(spacing: 14) {
-                        PhotosPicker(selection: $selectedItems, matching: .images) {
-                            Label(imagePaths.isEmpty ? copy("从相册选择", "Choose from Library") : copy("继续选择", "Add from Library"), systemImage: "photo.on.rectangle")
-                        }
-                        .onChange(of: selectedItems) { _, newItems in
-                            Task { await importImages(from: newItems) }
-                        }
-
-                        if CameraCaptureView.isCameraAvailable {
-                            Button {
-                                isShowingCamera = true
-                            } label: {
-                                Label(copy("拍照", "Take Photo"), systemImage: "camera.fill")
-                            }
-                            .buttonStyle(.borderless)
-                        }
+                    PhotoSourceMenu(showingLibrary: $isShowingPhotoLibrary, showingCamera: $isShowingCamera, identifier: "dream.new.addPhotos")
+                    .photosPicker(isPresented: $isShowingPhotoLibrary, selection: $selectedItems, matching: .images)
+                    .onChange(of: selectedItems) { _, newItems in
+                        Task { await importImages(from: newItems) }
                     }
 
                     if !imagePaths.isEmpty {

@@ -17,6 +17,7 @@ final class FakePhotoLibrary: PhotoLibraryService {
     var failedImages: Set<String> = []
     var deleted: [String] = []
     var imageRequests = 0
+    var imageSizes: [CGSize] = []
     var previewFailures: Set<String> = []
     var previewDelay: Duration = .zero
     var imageCancellations = 0
@@ -32,6 +33,7 @@ final class FakePhotoLibrary: PhotoLibraryService {
     func photos(in groupID: String) async -> [LibraryPhoto] { state.photos }
     func image(id: String, size: CGSize, progress: @escaping (Double) -> Void) async throws -> UIImage {
         imageRequests += 1
+        imageSizes.append(size)
         onImageRequest?(id)
         if previewDelay != .zero {
             do { try await Task.sleep(for: previewDelay) }
@@ -500,6 +502,46 @@ final class PhotoSwipeGestureTests: XCTestCase {
 
 @MainActor
 final class PreviewLoadingTests: XCTestCase {
+    func testOriginalRequestBypassesSmallerPrefetch() async {
+        let service = FakePhotoLibrary()
+        let loader = NativePhotoZoom.Coordinator()
+        await loader.preloadNext("b", service: service)?.value
+        let view = PhotoZoomScrollView()
+        loader.id = "b"
+        loader.load(view, id: "b", service: service, targetSize: PHImageManagerMaximumSize)
+        await loader.request?.value
+        XCTAssertEqual(service.imageRequests, 2)
+        XCTAssertEqual(service.imageSizes.last, PHImageManagerMaximumSize)
+        XCTAssertNotNil(view.photo.image)
+        loader.cancel()
+    }
+    func testOriginalFailureCanRetryAtOriginalSize() async {
+        let service = FakePhotoLibrary(); service.previewFailures = ["a"]
+        let loader = NativePhotoZoom.Coordinator(); loader.id = "a"
+        let view = PhotoZoomScrollView()
+        loader.load(view, id: "a", service: service, targetSize: PHImageManagerMaximumSize)
+        await loader.request?.value
+        XCTAssertFalse(view.retry.isHidden); XCTAssertNil(view.photo.image)
+        service.previewFailures = []
+        loader.load(view, id: "a", service: service, targetSize: PHImageManagerMaximumSize)
+        await loader.request?.value
+        XCTAssertTrue(view.retry.isHidden); XCTAssertNotNil(view.photo.image)
+        XCTAssertEqual(service.imageSizes, [PHImageManagerMaximumSize, PHImageManagerMaximumSize])
+        loader.cancel()
+    }
+    func testClosingCancelsOriginalDownload() async {
+        let service = FakePhotoLibrary(); service.previewDelay = .seconds(5)
+        let started = expectation(description: "original started")
+        service.onImageRequest = { _ in started.fulfill() }
+        let loader = NativePhotoZoom.Coordinator(); loader.id = "a"
+        let view = PhotoZoomScrollView()
+        loader.load(view, id: "a", service: service, targetSize: PHImageManagerMaximumSize)
+        await fulfillment(of: [started], timeout: 2)
+        loader.cancel()
+        await loader.request?.value
+        XCTAssertEqual(service.imageCancellations, 1)
+        XCTAssertNil(view.photo.image)
+    }
     func testNextImageIsReusedWithoutASecondRequest() async {
         let service = FakePhotoLibrary()
         let loader = NativePhotoZoom.Coordinator()

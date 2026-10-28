@@ -198,3 +198,22 @@ SwiftUI 通过环境主题值驱动页面，UIKit 网格选中标记、加载失
 版本 1.1（14）已通过 devicectl 覆盖安装到同一配对 iPhone 15，`device-install.json` 为 success；没有卸载或清空数据。自动启动因手机锁屏被拒绝，`device-launch.log` / `device-launch.json` 为 Locked，未宣称真机交互测试通过。解锁后可手动打开已安装的新版本。
 
 源码、选定生成图的压缩设计参考和验证摘要同步至 GitHub，保留历史；编译缓存、原始测试产物、设备数据、签名材料和用户照片不提交。未发布 App Store。
+
+
+## 2026-10-28 管理页、主题与原图查看（构建 15）
+
+三款主题按手机显示反馈加深整段底色，并加深操作色和次级文字。独立主题 ID、默认值、保存键和旧画册数据格式不变。对自定义 primary/secondary/accent 与三个渐变色节点和导航底色计算最小对比度：雾蓝 8.26/4.74/4.91，薄荷 8.47/4.87/4.66，蓝紫 7.65/4.64/4.88；这是指定颜色的计算检查，不等同于全 App 辅助功能合规。
+
+整理卡片支持轻点打开原尺寸静态图，使用 PhotoKit 最大尺寸且不缩小请求；双指缩放、双击放大还原、放大后平移，完成后回到原卡片，不写入判断。只加载当前原图，不预取其他原图；沿用下载进度/错误重试，关闭取消并释放图片。
+
+创建画册和详情全部画面的两个来源按钮合并为“拍照”，点开原生来源选择，再选从相册添加或拍照；相机不可用时隐藏相机来源。原有系统选图、拍照及独立副本保存流程保留。首页顺序改为日期、全部照片、待删，按宽度使用三种单行布局，1000 张待删保留准确数量，全部照片可简化为图标。
+
+我的改为紧凑概览及照片管理、画册管理、设置三组。照片/分组/待删、梦想画册/归档/画册设置有独立入口，提醒集中到专页，保留头像、语言、主题和权限。移除旧会话“继续整理 4/4”显示；提醒摘要同时考虑整理提醒和梦想提醒。
+
+- `iphone-management.xcresult` 的 60 项单元全部通过，新增原图请求不复用较小预取、原尺寸失败重试、关闭取消 3 项；旧数据解码、整理状态、服务失败与提醒测试继续通过。
+- 双设备组合覆盖 7 个不同 UI 场景：主题逐款切换/重启（`iphone.xcresult`、`ipad.xcresult` 及 `*-management.xcresult`），原图点击/缩放/返回不改变判断（`*-final.xcresult`），原有预览手势（`*-features.xcresult`），13/1000 待删单行布局与入口（`*-final.xcresult`），管理页照片/分组/待删/画册/归档/设置入口（`*-management-hits.xcresult`），提醒开启/重启/关闭（`*-management.xcresult`），创建及详情来源选择/系统选图打开与取消返回（最终 `*-source-presentations.xcresult`）。这些定向场景全部通过，不称为完整 UI 套件回归。
+- 迭代中管理页 plain 按钮的行内空白点击失败，补充 contentShape 后重测通过。来源选择最初的菜单点击与系统选图取消脚本失败；改为明确的来源对话框，并核验 iOS26.5 远程 PhotosPicker 暴露过期/零尺寸 AX 宿主、iPad 两种呈现位置后，测试用当前两台纵向模拟器截图中可见 X 的坐标验证关闭。早期失败结果全部保留，最终双设备来源流程通过；坐标辅助仅适用于本轮 UI 测试设备，不是生产代码或完整 PhotosPicker 辅助功能验证。
+- 最终模拟器测试构建、签名 iOS 和 Mac Catalyst 构建成功：`build-source-presentations.log`、`build-device-release-check.log`、`build-mac-release-check.log`。管理页构建初次 Section 重载错误已修复，不计为成功构建。
+- 视觉证据：`comparison-{mistBlue,iceMint,bluePearl}.png` 对照构建14/15；`management-comparison.png` 与局部图对照用户反馈和新管理页；双设备管理页/原图/首页截图人工检查，报告见 `design-qa.md`。用户截图、原始 UI 测试和设备数据只留 `.ui-checks/themes-v15/`。
+
+版本 1.1（15）已覆盖安装并成功启动到配对 iPhone 15，`device-install.json`、`device-launch.json` 均 success；未卸载、清空用户数据或执行真机照片删除。真机高像素原图内存、iCloud 原图下载、实际相机拍摄、权限切换和完整辅助功能仍需专项验收。未发布 App Store。源码与本摘要按 AGENTS.md 同步 GitHub，保留历史。

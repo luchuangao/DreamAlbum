@@ -156,48 +156,64 @@ struct DailyPhotoInboxView: View {
     }
     private func header(_ current: PhotoInboxBatch) -> some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 dateButton(current)
                 Spacer(minLength: 0)
-                pendingButton
-                allPhotosButton
+                allPhotosButton()
+                pendingButton()
             }
-            VStack(alignment: .leading, spacing: 10) {
-                HStack { dateButton(current); Spacer(minLength: 8); allPhotosButton }
-                HStack { Spacer(); pendingButton }
+            HStack(spacing: 6) {
+                dateButton(current)
+                Spacer(minLength: 0)
+                allPhotosButton(compact: true)
+                pendingButton()
+            }
+            HStack(spacing: 6) {
+                dateButton(current, compact: true).layoutPriority(1)
+                Spacer(minLength: 0)
+                allPhotosButton(compact: true)
+                pendingButton(compact: true).layoutPriority(2)
             }
         }
     }
-    private var allPhotosButton: some View {
+    private func allPhotosButton(compact: Bool = false) -> some View {
         Button { openLibrary() } label: {
-            Label(c("全部照片", "All photos"), systemImage: "square.grid.2x2")
-                .font(.subheadline.weight(.medium)).fixedSize()
-                .padding(.horizontal, 10).frame(minHeight: 44)
-                .background(theme.surface, in: Capsule())
+            Group {
+                if compact { Image(systemName: "square.grid.2x2").frame(width: 28) }
+                else { Label(c("全部照片", "All photos"), systemImage: "square.grid.2x2") }
+            }
+            .font(.subheadline.weight(.medium)).fixedSize()
+            .padding(.horizontal, 8).frame(minWidth: 44, minHeight: 44)
+            .background(theme.surface, in: Capsule())
         }.buttonStyle(.plain).foregroundStyle(theme.accent)
             .accessibilityLabel(c("全部照片", "All photos")).accessibilityIdentifier("today.all")
     }
-    private func dateButton(_ current: PhotoInboxBatch) -> some View {
+    private func dateButton(_ current: PhotoInboxBatch, compact: Bool = false) -> some View {
         let displayedDate = current.date ?? (current.items.isEmpty ? selectedDay : nil)
         return Button { calendarDay = displayedDate ?? selectedDay ?? Date(); showCalendar = true } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: compact ? 4 : 6) {
                 Image(systemName: "calendar")
-                Text(displayedDate.map(shortDateLabel) ?? (current.items.isEmpty ? c("选择日期", "Choose date") : c("日期未知", "Undated")))
-                    .accessibilityIdentifier("today.date")
-                Image(systemName: "chevron.down").font(.caption2.weight(.semibold))
-            }.font(.subheadline).foregroundStyle(.primary).fixedSize().padding(.horizontal, 10).frame(minHeight: 44)
+                Text(displayedDate.map { compact ? $0.formatted(.dateTime.month(.twoDigits).day(.twoDigits)) : shortDateLabel($0) }
+                     ?? (current.items.isEmpty ? c("选择日期", "Choose date") : c("日期未知", "Undated")))
+                    .lineLimit(1).minimumScaleFactor(0.6).accessibilityIdentifier("today.date")
+                if !compact { Image(systemName: "chevron.down").font(.caption2.weight(.semibold)) }
+            }.font(.subheadline).foregroundStyle(.primary)
+                .fixedSize(horizontal: !compact, vertical: true)
+                .padding(.horizontal, 8).frame(minWidth: 44, minHeight: 44)
                 .background(theme.surface, in: Capsule())
         }.buttonStyle(.plain).accessibilityLabel(c("选择日期", "Choose date"))
             .accessibilityValue(displayedDate.map(dateLabel) ?? c("日期未知", "Undated"))
             .accessibilityIdentifier("today.calendar").disabled(!library.hasAccess)
     }
-    private var pendingButton: some View {
+    private func pendingButton(compact: Bool = false) -> some View {
         Button { showPending = true } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: compact ? 4 : 6) {
                 Image(systemName: "tray")
-                Text(c("待删", "Pending"))
+                if !compact { Text(c("待删", "Pending")) }
                 Text("\(library.session.pendingDeletion.count)").monospacedDigit().fontWeight(.semibold)
-            }.font(.subheadline).fixedSize().padding(.horizontal, 10).frame(minHeight: 44)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+            }.font(.subheadline).fixedSize(horizontal: !compact, vertical: true)
+                .padding(.horizontal, 8).frame(minWidth: 44, minHeight: 44)
                 .background(theme.surface, in: Capsule())
         }.buttonStyle(.plain).foregroundStyle(theme.accent)
             .accessibilityLabel(c("待删 \(library.session.pendingDeletion.count)", "Pending \(library.session.pendingDeletion.count)"))

@@ -16,17 +16,17 @@ enum AppTheme: String, CaseIterable, Identifiable {
     }
     var background: Color {
         switch self {
-        case .mistBlue: return Color(hex: 0xEEF5FC)
-        case .iceMint: return Color(hex: 0xEEF9FA)
-        case .bluePearl: return Color(hex: 0xF1F2FC)
+        case .mistBlue: return Color(hex: 0xCEE2F7)
+        case .iceMint: return Color(hex: 0xCCEDE5)
+        case .bluePearl: return Color(hex: 0xD7D4F4)
         }
     }
     var gradient: LinearGradient {
         let colors: [Color]
         switch self {
-        case .mistBlue: colors = [Color(hex: 0xEBF4FD), Color(hex: 0xF4F9FE), Color(hex: 0xECF5FD)]
-        case .iceMint: colors = [Color(hex: 0xE2F3FD), Color(hex: 0xF2FCFA), Color(hex: 0xE4F7F1)]
-        case .bluePearl: colors = [Color(hex: 0xE5EDFD), Color(hex: 0xF5F6FD), Color(hex: 0xEDE6FA)]
+        case .mistBlue: colors = [Color(hex: 0xC4DDF6), Color(hex: 0xD8E9FA), Color(hex: 0xC7DEF4)]
+        case .iceMint: colors = [Color(hex: 0xC3E7F6), Color(hex: 0xD3EFEA), Color(hex: 0xBFE7D9)]
+        case .bluePearl: colors = [Color(hex: 0xCAD9F6), Color(hex: 0xDDDCF6), Color(hex: 0xD5C5EF)]
         }
         return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
     }
@@ -40,16 +40,16 @@ enum AppTheme: String, CaseIterable, Identifiable {
     }
     var secondary: Color {
         switch self {
-        case .mistBlue: return Color(hex: 0x65768D)
-        case .iceMint: return Color(hex: 0x5C777E)
-        case .bluePearl: return Color(hex: 0x71718B)
+        case .mistBlue: return Color(hex: 0x4C5E76)
+        case .iceMint: return Color(hex: 0x466269)
+        case .bluePearl: return Color(hex: 0x53536A)
         }
     }
     var accent: Color {
         switch self {
-        case .mistBlue: return Color(hex: 0x2565AC)
-        case .iceMint: return Color(hex: 0x08778B)
-        case .bluePearl: return Color(hex: 0x565CBA)
+        case .mistBlue: return Color(hex: 0x205B9F)
+        case .iceMint: return Color(hex: 0x066A7C)
+        case .bluePearl: return Color(hex: 0x45499B)
         }
     }
     var destructive: Color { Color(hex: 0xC13F43) }
