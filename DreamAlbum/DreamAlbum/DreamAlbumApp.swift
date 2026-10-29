@@ -21,6 +21,7 @@ struct DreamAlbumApp: App {
         _library = StateObject(wrappedValue: PhotoLibraryStore())
         _sortingReminder = StateObject(wrappedValue: PhotoSortingReminder())
         #endif
+        AppTheme.installSilverAppearance()
     }
     @StateObject private var purchaseStore = PurchaseStore()
 

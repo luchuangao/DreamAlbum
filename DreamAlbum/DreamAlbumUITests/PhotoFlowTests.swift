@@ -377,10 +377,53 @@ final class PhotoFlowTests: XCTestCase {
         XCTAssertTrue(app.switches["reminder.toggle"].waitForExistence(timeout: 5))
         capture("management-reminders")
     }
+    func testSilverEnglishManagementAndLanguageSwitch() {
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-dream_album.app_language", "english", "-dailyInboxFixture", "-resetDailyFixture", "-silverLayoutFixture"]
+        app.launch()
+        app.buttons["tab.me"].tap()
+        XCTAssertTrue(app.staticTexts["Photo management"].waitForExistence(timeout: 5))
+        capture("silver-management-english")
+        let row = app.buttons["settings.language"]
+        for _ in 0..<4 where !row.isHittable { app.swipeUp() }
+        visibleButton("settings.language").tap()
+        visibleButton("中文").tap()
+        app.swipeDown()
+        XCTAssertTrue(app.staticTexts["照片管理"].waitForExistence(timeout: 5))
+    }
+    func testSilverFourPagesAndPreferencePersistence() {
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN", "-dream_album.app_language", "chinese", "-dailyInboxFixture", "-resetDailyFixture", "-silverLayoutFixture"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 4 张")
+        capture("silver-home")
+        app.buttons["tab.groups"].tap()
+        XCTAssertTrue(app.staticTexts["微信"].waitForExistence(timeout: 5))
+        XCTAssertLessThanOrEqual(app.cells.firstMatch.frame.width, 700)
+        capture("silver-groups")
+        app.buttons["tab.dreams"].tap(); capture("silver-dreams")
+        app.buttons["tab.me"].tap(); capture("silver-management")
+        let row = app.buttons["settings.theme"]
+        for _ in 0..<4 where !row.isHittable { app.swipeUp() }
+        visibleButton("settings.theme").tap()
+        XCTAssertEqual(visibleButton("theme.option.silver").value as? String, "已选择")
+        capture("silver-theme-picker")
+        goBack()
+        app.buttons["tab.photos"].tap()
+        visibleButton("today.continue").tap(); readyReviewPhoto()
+        readyReviewPhoto().swipeLeft()
+        visibleButton("关闭整理").tap()
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "-resetDailyFixture" }
+        app.launch()
+        XCTAssertEqual(visibleButton("today.pending").label, "待删 1")
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 3 张")
+    }
     func testThemeSelectionPersistsAcrossTabsAndRelaunch() {
         launchDailyFixture()
         let remaining = app.staticTexts["today.remaining"].label
-        for (id, name) in [("mistBlue", "雾蓝晨光"), ("iceMint", "冰蓝薄荷"), ("bluePearl", "蓝紫珍珠")] {
+        for (id, name) in [("silver", "原生银灰"), ("mistBlue", "雾蓝晨光"), ("iceMint", "冰蓝薄荷"), ("bluePearl", "蓝紫珍珠")] {
             app.buttons["tab.me"].tap()
             let row = app.buttons["settings.theme"]
             for _ in 0..<4 where !row.isHittable { app.swipeUp() }

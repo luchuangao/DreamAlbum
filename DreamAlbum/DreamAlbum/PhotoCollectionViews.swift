@@ -37,7 +37,7 @@ struct PhotoGroupsView: View {
                         .frame(width: 44, height: 44).contentShape(Rectangle())
                 }.buttonStyle(.plain).accessibilityLabel(c("新建分组", "New album"))
                     .disabled(!library.hasAccess || library.isChanging)
-            }.padding(.horizontal, 24).padding(.top, 8)
+            }.frame(maxWidth: 700).padding(.horizontal, 16).padding(.top, 32).frame(maxWidth: .infinity)
             LimitedPhotosBanner()
             if !library.hasAccess { LibraryPermissionView() }
             else {
@@ -55,7 +55,7 @@ struct PhotoGroupsView: View {
                                         Text(c("\(group.count) 张", "\(group.count) photos")).font(.caption).foregroundStyle(.secondary)
                                     }
                                     Spacer()
-                                }.padding(.vertical, 7)
+                                }.frame(minHeight: 94)
                             }
                             if group.canRename || group.canDelete {
                                 Menu { groupActions(group) } label: {
@@ -77,12 +77,18 @@ struct PhotoGroupsView: View {
                             if group.canDelete { Button(c("仅删分组", "Album only"), role: .destructive) { delete(group) } }
                             if group.canRename { Button(c("重命名", "Rename")) { title = group.title; editing = group }.tint(theme.accent) }
                         }
-                        .listRowBackground(theme.surface).disabled(library.isChanging)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 12))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(groupBackground(group))
+                        .overlay(alignment: .bottom) { if group.id != visibleGroups.last?.id { Divider().padding(.leading, 62) } }
+                        .disabled(library.isChanging)
                     }
                     if library.authorization == .limited {
                         Button(c("完整访问可查看其他相册", "Full access shows other albums")) { openPhotoSettings() }
                     }
-                }.scrollContentBackground(.hidden).contentMargins(.top, 18, for: .scrollContent)
+                }.listStyle(.plain).scrollContentBackground(.hidden)
+                    .contentMargins(.top, 28, for: .scrollContent)
+                    .frame(maxWidth: 700).padding(.horizontal, 16).frame(maxWidth: .infinity)
             }
         }
         .background(AlbumBackground()).navigationTitle("")
@@ -117,6 +123,15 @@ struct PhotoGroupsView: View {
                  : c("可整理其中的照片，此相册暂不支持修改。", "You can organize the photos inside. This album cannot be edited."))
         }
         .libraryErrorAlert()
+    }
+    private func groupBackground(_ group: LibraryGroup) -> some View {
+        let first = group.id == visibleGroups.first?.id
+        let last = group.id == visibleGroups.last?.id
+        return UnevenRoundedRectangle(topLeadingRadius: first ? 14 : 0,
+                                      bottomLeadingRadius: last ? 14 : 0,
+                                      bottomTrailingRadius: last ? 14 : 0,
+                                      topTrailingRadius: first ? 14 : 0)
+            .fill(theme.surface)
     }
     @ViewBuilder
     private func groupActions(_ group: LibraryGroup) -> some View {
@@ -285,7 +300,7 @@ struct DreamGalleryView: View {
     private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 30) {
                 HStack {
                     Text(c("\(store.activeDreams.count) 本画册", "\(store.activeDreams.count) albums"))
                         .font(.subheadline).foregroundStyle(.secondary)
@@ -315,7 +330,7 @@ struct DreamGalleryView: View {
                 }
             }
             .frame(maxWidth: 700)
-            .padding(.horizontal, 24).padding(.top, 8).padding(.bottom, 24)
+            .padding(.horizontal, 20).padding(.top, 32).padding(.bottom, 24)
             .frame(maxWidth: .infinity)
         }
         .background(AlbumBackground()).navigationTitle("")
@@ -350,8 +365,8 @@ struct DreamGalleryView: View {
             }.padding(20)
         }
         .frame(maxWidth: .infinity).frame(height: 350)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .contentShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .contentShape(RoundedRectangle(cornerRadius: 14))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(dream.title + "，" + (dream.imagePaths.first?.hasPrefix("sample:") == true
             ? c("内置示例画面", "Built-in sample")

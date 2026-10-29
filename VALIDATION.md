@@ -232,3 +232,18 @@ SwiftUI 通过环境主题值驱动页面，UIKit 网格选中标记、加载失
 - 已人工查看三主题双设备对比总览 `iphone-theme-shots-overview.png`、`ipad-theme-shots-overview.png` 和原图返回/预览截图：白色卡片与操作栏白底消失，保持完整图片和主题底色。中英文图标、Live Photo 标题截图在 `iphone-language-shots/`；视觉检查见 `design-qa.md`。
 
 版本 1.1（16）已覆盖安装且成功启动到配对 iPhone 15，`device-install.json` 和 `device-launch.json` 均 success。没有卸载、清空数据或执行手机原图删除。真实 Live Photo 动态播放、iCloud 动态下载、高清照片内存、权限切换及完整辅助功能仍需专项真机验收，模拟回退不能替代真实播放验证。源码与文档按 AGENTS.md 同步 GitHub，原始测试、截图、设备与签名信息不提交。未发布 App Store。
+
+
+## 2026-10-29 原生银灰与四页层次（构建 17）
+
+按用户选择的最近四页方案第 1 套新增原生银灰，银灰页面底、白色内容表面、蓝色操作和浅色固定栏统一四页。首页补足顶部留白并保留真实进度；分组采用14pt边角的原生列表，保留滑动、重命名与删除；梦想画册保持独立封面和20pt外侧留白；我的改为14pt分区与清晰行距，保留全部管理/语言/权限/提醒入口，分组数量跟随隐藏不可编辑分组的偏好。宽屏内容限制700pt并居中。
+
+设备首次运行本次改版会通过独立本机标志启用用户选定的银灰，之后尊重用户选择；原有3个主题ID与存储键保留。新增两项迁移/旧ID回退单元测试，不将外观标志写入梦想备份，不修改旧梦想、组件和iCloud数据格式。
+
+- `.ui-checks/silver-v17/iphone-resume.xcresult`：最终65项单元全通过，含主题迁移只执行一次、旧ID与未知值回退，以及原有旧数据解码、整理状态、图片服务和提醒测试。
+- 初轮 `iphone.xcresult`、`ipad.xcresult` 各5项UI通过：分组重命名/删除、管理页入口、原图缩放返回、银灰四页及整理重启状态、四款主题逐一切换/重启保持。`*-final.xcresult` 补充中英文与语言菜单检查。组合覆盖每种设备6个不同UI场景，不称为完整UI套件回归。
+- 视觉对照后调整iPad分组宽度、顶部与资料区留白、分组/管理行距。`*-spacing.xcresult` 因运行器初始化时Accessibility加载超时失败，未执行用例，未计为通过。恢复环境后，最终 `iphone-resume.xcresult`、`ipad-resume.xcresult` 各3项UI通过：管理入口、英文/语言切换、银灰四页/宽度/整理恢复。
+- 最后布局代码的签名iOS及Mac Catalyst构建均成功：`build-device-spacing.log`、`build-mac-spacing.log`；恢复后的模拟器测试构建 `build-resume.log` 成功，四处构建号均17，版本1.1。
+- 最终四页实际运行截图及源图放在同一画布对照，文件 `comparison-resume-{iphone,ipad}.png`，局部为 `comparison-controls-resume.png`；已核验颜色、字体、布局、图片和文案，`design-qa.md` 为 passed。源图私人照片和全部原始截图/结果只留本机，不提交到仓库。
+
+最终版本1.1（17）已覆盖安装并成功启动到配对iPhone15，`device-install-resume.json`、`device-launch-resume.json` 均success。上轮手机离线曾导致最后间距修正版安装失败，该失败回执仍保留；本次已安装成功。未卸载、清空数据、删除手机原图或发布App Store。真实图库万张性能、iCloud下载、完整辅助功能及Live Photo专项验证不由本次主题测试替代。源码与本摘要按AGENTS.md提交并同步GitHub，保留远程历史。

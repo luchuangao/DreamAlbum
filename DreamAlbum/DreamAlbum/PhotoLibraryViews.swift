@@ -361,7 +361,7 @@ struct PhotoBrowserView: View {
             }.accessibilityIdentifier("library.action.pending").disabled(selection.isEmpty)
         }
         .font(.subheadline).padding(20).frame(minHeight: 56)
-        .background(AlbumBackground()).disabled(library.isChanging)
+        .background(theme.utilityBackground).disabled(library.isChanging)
     }
     private func removeSelectionFromGroup() {
         guard let group else { return }
@@ -457,7 +457,7 @@ struct PhotoPreview: View {
                             else { decide(photo.id, delete: true) }
                         } label: { Label(photo.map { library.session.pendingDeletion.contains($0.id) } == true ? c("取消待删", "Unmark") : c("待删", "Pending"), systemImage: "tray") }
                             .disabled(!loaded).accessibilityIdentifier("preview.pending")
-                    }.font(.subheadline).padding(20).background(AlbumBackground()).disabled(photo == nil || swiping)
+                    }.font(.subheadline).padding(20).background(theme.utilityBackground).disabled(photo == nil || swiping)
                 }.background(AlbumBackground())
             }
             .fullScreenCover(item: $destination) { destination in

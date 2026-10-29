@@ -6,7 +6,7 @@ struct RootView: View {
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var sortingReminder: PhotoSortingReminder
     @Environment(\.scenePhase) private var phase
-    @AppStorage(AppTheme.storageKey) private var themeID = AppTheme.mistBlue.rawValue
+    @AppStorage(AppTheme.storageKey) private var themeID = AppTheme.silver.rawValue
     private var theme: AppTheme { AppTheme.resolve(themeID) }
     var body: some View {
         MainTabView()
@@ -77,7 +77,7 @@ struct MainTabView: View {
                 tab(.home, title: c("梦想画册", "Dream albums"), icon: "book", identifier: "tab.dreams")
                 tab(.me, title: c("我的", "Me"), icon: "person.crop.circle", identifier: "tab.me")
             }
-            .padding(.top, 8).background(AlbumBackground())
+            .padding(.top, 8).background(theme.utilityBackground.ignoresSafeArea(edges: .bottom))
             .overlay(alignment: .top) { Divider() }
         }.background(AlbumBackground())
         #endif

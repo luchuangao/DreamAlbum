@@ -4,7 +4,8 @@ import UIKit
 
 struct SettingsView: View {
     @Environment(\.albumTheme) private var theme
-    @AppStorage(AppTheme.storageKey) private var themeID = AppTheme.mistBlue.rawValue
+    @AppStorage(AppTheme.storageKey) private var themeID = AppTheme.silver.rawValue
+    @AppStorage("dream_album.hide_readonly_groups") private var hideReadOnlyGroups = false
     @EnvironmentObject private var store: DreamStore
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var reminder: PhotoSortingReminder
@@ -12,8 +13,8 @@ struct SettingsView: View {
     private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
     var body: some View {
         NavigationStack {
-            List {
-                Section {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 30) {
                     HStack(spacing: 12) {
                         ProfileAvatarPicker(size: 42)
                         VStack(alignment: .leading, spacing: 5) {
@@ -21,70 +22,91 @@ struct SettingsView: View {
                             Text(library.hasAccess
                                  ? c("\(library.photos.count) 张照片 · \(store.activeDreams.count) 本画册", "\(library.photos.count) photos · \(store.activeDreams.count) albums")
                                  : c("\(store.activeDreams.count) 本画册", "\(store.activeDreams.count) albums"))
-                                .font(.caption).foregroundStyle(.secondary)
+                                .font(.caption).foregroundStyle(theme.secondary)
                         }
-                    }.padding(.vertical, 4)
-                }.listRowBackground(theme.surface)
-                Section(c("照片管理", "Photo management")) {
-                    NavigationLink { PhotoBrowserView().libraryErrorAlert() } label: {
-                        managementRow("photo.on.rectangle", c("全部照片", "All photos"), library.hasAccess ? "\(library.photos.count)" : "—")
-                    }.accessibilityIdentifier("management.photos")
-                    NavigationLink { PhotoGroupsView().toolbar(.visible, for: .navigationBar) } label: {
-                        managementRow("folder", c("分组", "Albums"), "\(library.groups.count)")
-                    }.accessibilityIdentifier("management.groups")
-                    Button { showingPending = true } label: {
-                        HStack {
+                        Spacer(minLength: 0)
+                    }.padding(.horizontal, 16).padding(.vertical, 23).frame(maxWidth: .infinity, alignment: .leading)
+                        .background(theme.surface, in: RoundedRectangle(cornerRadius: 14))
+                    managementSection(c("照片管理", "Photo management")) {
+                        managementLink("photo.on.rectangle", c("全部照片", "All photos"), library.hasAccess ? "\(library.photos.count)" : "—") {
+                            PhotoBrowserView().libraryErrorAlert()
+                        }.accessibilityIdentifier("management.photos")
+                        rowDivider
+                        managementLink("folder", c("分组", "Albums"), "\(library.groups.filter { !hideReadOnlyGroups || $0.isEditable }.count)") {
+                            PhotoGroupsView().toolbar(.visible, for: .navigationBar)
+                        }.accessibilityIdentifier("management.groups")
+                        rowDivider
+                        Button { showingPending = true } label: {
                             managementRow("tray", c("待删清单", "Pending deletions"), "\(library.session.pendingDeletion.count)")
-                            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
-                        }.contentShape(Rectangle())
-                    }.accessibilityIdentifier("management.pending").buttonStyle(.plain)
-                }.listRowBackground(theme.surface)
-                Section(c("画册管理", "Dream albums")) {
-                    NavigationLink { DreamGalleryView().toolbar(.visible, for: .navigationBar) } label: {
-                        managementRow("book", c("梦想画册", "Dream albums"), "\(store.activeDreams.count)")
-                    }.accessibilityIdentifier("management.dreams")
-                    NavigationLink { ArchivedDreamAlbumsView() } label: {
-                        managementRow("archivebox", c("归档画册", "Archived albums"), "\(store.archivedDreams.count)")
-                    }.accessibilityIdentifier("management.archived")
-                    NavigationLink { AlbumPreferencesView() } label: {
-                        managementRow("slider.horizontal.3", c("画册设置", "Album settings"))
-                    }.accessibilityIdentifier("management.albumSettings")
-                }.listRowBackground(theme.surface)
-                Section {
-                    NavigationLink { SortingReminderSettingsView() } label: {
-                        managementRow("bell", c("提醒设置", "Reminders"), reminder.enabled || store.isDailyReminderEnabled ? c("已开启", "On") : c("已关闭", "Off"))
-                    }.accessibilityIdentifier("settings.reminders")
-                    NavigationLink { AppThemePicker() } label: {
-                        managementRow("paintpalette", c("背景主题", "Background theme"), AppTheme.resolve(themeID).title(store.appLanguage))
-                    }.accessibilityIdentifier("settings.theme")
-                    Picker(selection: $store.appLanguage) {
-                        ForEach(AppLanguage.allCases) { Text($0.title).tag($0) }
-                    } label: { Label(c("语言", "Language"), systemImage: "globe") }
-                    Button { openPhotoSettings() } label: {
-                        managementRow("lock.shield", c("照片权限", "Photo access"), permissionLabel)
-                    }.buttonStyle(.plain).accessibilityIdentifier("management.permissions")
-                    if library.authorization == .limited {
-                        Button(c("管理可访问照片", "Manage accessible photos")) { manageLimitedPhotos() }
+                        }.buttonStyle(.plain).accessibilityIdentifier("management.pending")
                     }
-                } header: { Text(c("设置", "Settings")) } footer: {
+                    managementSection(c("画册管理", "Dream albums")) {
+                        managementLink("book", c("梦想画册", "Dream albums"), "\(store.activeDreams.count)") {
+                            DreamGalleryView().toolbar(.visible, for: .navigationBar)
+                        }.accessibilityIdentifier("management.dreams")
+                        rowDivider
+                        managementLink("archivebox", c("归档画册", "Archived albums"), "\(store.archivedDreams.count)") {
+                            ArchivedDreamAlbumsView()
+                        }.accessibilityIdentifier("management.archived")
+                        rowDivider
+                        managementLink("slider.horizontal.3", c("画册设置", "Album settings")) {
+                            AlbumPreferencesView()
+                        }.accessibilityIdentifier("management.albumSettings")
+                    }
+                    managementSection(c("设置", "Settings")) {
+                        managementLink("bell", c("提醒设置", "Reminders"), reminder.enabled || store.isDailyReminderEnabled ? c("已开启", "On") : c("已关闭", "Off")) {
+                            SortingReminderSettingsView()
+                        }.accessibilityIdentifier("settings.reminders")
+                        rowDivider
+                        managementLink("paintpalette", c("背景主题", "Background theme"), AppTheme.resolve(themeID).title(store.appLanguage)) {
+                            AppThemePicker()
+                        }.accessibilityIdentifier("settings.theme")
+                        rowDivider
+                        Menu {
+                            Picker(c("语言", "Language"), selection: $store.appLanguage) {
+                                ForEach(AppLanguage.allCases) { Text($0.title).tag($0) }
+                            }
+                        } label: { managementRow("globe", c("语言", "Language"), store.appLanguage.title) }
+                            .accessibilityIdentifier("settings.language")
+                        rowDivider
+                        Button { openPhotoSettings() } label: {
+                            managementRow("lock.shield", c("照片权限", "Photo access"), permissionLabel)
+                        }.buttonStyle(.plain).accessibilityIdentifier("management.permissions")
+                        if library.authorization == .limited {
+                            rowDivider
+                            Button(c("管理可访问照片", "Manage accessible photos")) { manageLimitedPhotos() }.frame(minHeight: 56)
+                        }
+                    }
                     Text(c("画册支持 iCloud 同步，整理进度保存在本机。", "Albums support iCloud sync. Review progress stays on this device."))
-                }.listRowBackground(theme.surface)
+                        .font(.caption).foregroundStyle(theme.secondary).padding(.horizontal, 16)
+                }.frame(maxWidth: 700).padding(.horizontal, 16).padding(.top, 22).padding(.bottom, 24)
+                    .frame(maxWidth: .infinity)
             }
-            .listStyle(.insetGrouped).listSectionSpacing(20)
-            .contentMargins(.top, 8, for: .scrollContent)
-            .scrollContentBackground(.hidden).background(AlbumBackground())
+            .background(AlbumBackground())
             .navigationTitle("").navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingPending) { NavigationStack { PendingPhotosView() } }
         }
+    }
+    private var rowDivider: some View { Rectangle().fill(theme.separator).frame(height: 0.5).padding(.leading, 36) }
+    private func managementSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.headline).accessibilityAddTraits(.isHeader).padding(.horizontal, 12)
+            VStack(spacing: 0, content: content).padding(.horizontal, 16)
+                .background(theme.surface, in: RoundedRectangle(cornerRadius: 14))
+        }
+    }
+    private func managementLink<Destination: View>(_ icon: String, _ title: String, _ value: String = "", @ViewBuilder destination: () -> Destination) -> some View {
+        NavigationLink(destination: destination) { managementRow(icon, title, value) }.buttonStyle(.plain)
     }
     private func managementRow(_ icon: String, _ title: String, _ value: String = "") -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon).foregroundStyle(theme.accent).frame(width: 24)
             Text(title).foregroundStyle(theme.primary)
             Spacer(minLength: 8)
-            if !value.isEmpty { Text(value).font(.subheadline).foregroundStyle(.secondary).lineLimit(1) }
-        }.frame(minHeight: 32).contentShape(Rectangle())
+            if !value.isEmpty { Text(value).font(.subheadline).foregroundStyle(theme.secondary).lineLimit(1) }
+            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(theme.secondary.opacity(0.7))
+        }.font(.body).frame(minHeight: 60).contentShape(Rectangle())
     }
     private var permissionLabel: String {
         switch library.authorization {

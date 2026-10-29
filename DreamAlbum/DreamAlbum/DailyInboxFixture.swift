@@ -35,7 +35,7 @@ final class DailyInboxFixture: PhotoLibraryService {
             let arguments = ProcessInfo.processInfo.arguments
             let reviewedIDs = arguments.contains("-allReviewedFixture") ? fixture.assets.map(\.id)
                 : arguments.contains("-completedDailyFixture") ? today.map(\.id)
-                : ["p0", "p1", "p2", "p3", "p4", "p5", "s0", "s1"]
+                : arguments.contains("-silverLayoutFixture") ? ["p0"] : ["p0", "p1", "p2", "p3", "p4", "p5", "s0", "s1"]
             let seededIDs = arguments.contains("-homeDateTaskFixture") ? ["todayDone", "dayDone"] : reviewedIDs
             for id in seededIDs where fixture.assets.contains(where: { $0.id == id }) { session.decide(id, delete: false) }
             if arguments.contains("-homeDateTaskFixture") { session.decide("dayDone", delete: true) }
@@ -67,6 +67,11 @@ final class DailyInboxFixture: PhotoLibraryService {
                       LibraryPhoto(id: "dayRemaining", date: yesterday.addingTimeInterval(60), isScreenshot: false, isLivePhoto: false),
                       LibraryPhoto(id: "older", date: calendar.date(byAdding: .month, value: -1, to: yesterday), isScreenshot: false, isLivePhoto: false)]
         }
+        if ProcessInfo.processInfo.arguments.contains("-silverLayoutFixture") {
+            photos = Array(photos.filter { $0.id.hasPrefix("p") }.prefix(5))
+            albumNames = ["editable": "微信", "second": "Weixin", "third": "测试"]
+            members = ["editable": ["p0", "p1"], "second": ["p2"], "third": []]
+        }
         assets = photos
         let args = ProcessInfo.processInfo.arguments
         if let index = args.firstIndex(of: "-fixturePendingCount"), args.indices.contains(index + 1),
@@ -79,9 +84,10 @@ final class DailyInboxFixture: PhotoLibraryService {
     }
     func requestAccess() async -> PHAuthorizationStatus { authorization }
     func snapshot() async -> LibrarySnapshot {
-        let groups = ["editable", "readonly"].compactMap { id -> LibraryGroup? in
+        let groupIDs = ProcessInfo.processInfo.arguments.contains("-silverLayoutFixture") ? ["editable", "second", "third"] : ["editable", "readonly"]
+        let groups = groupIDs.compactMap { id -> LibraryGroup? in
             guard let title = albumNames[id] else { return nil }
-            let editable = id == "editable"
+            let editable = id != "readonly"
             return LibraryGroup(id: id, title: title, count: editable ? members[id, default: []].count : assets.count,
                                 canAdd: editable, canRemove: editable, canRename: editable, canDelete: editable, isSystem: !editable)
         }
@@ -111,15 +117,15 @@ final class DailyInboxFixture: PhotoLibraryService {
     func imageData(id: String, progress: @escaping (Double) -> Void) async throws -> Data { try await image(id: id, size: CGSize(width: 360, height: 600), progress: progress).pngData()! }
     func createGroup(title: String, photoIDs: [String]) async throws { throw PhotoLibraryFailure.notEditable }
     func renameGroup(id: String, title: String) async throws {
-        guard id == "editable", albumNames[id] != nil else { throw PhotoLibraryFailure.notEditable }
+        guard id != "readonly", albumNames[id] != nil else { throw PhotoLibraryFailure.notEditable }
         albumNames[id] = title
     }
     func deleteGroup(id: String) async throws {
-        guard id == "editable", albumNames[id] != nil else { throw PhotoLibraryFailure.notEditable }
+        guard id != "readonly", albumNames[id] != nil else { throw PhotoLibraryFailure.notEditable }
         albumNames.removeValue(forKey: id); members.removeValue(forKey: id)
     }
     func deleteGroupAndPhotos(id: String) async throws -> [String] {
-        guard id == "editable", albumNames[id] != nil else { throw PhotoLibraryFailure.notEditable }
+        guard id != "readonly", albumNames[id] != nil else { throw PhotoLibraryFailure.notEditable }
         // Validate before either mutation, matching PhotoKit transaction semantics.
         let ids = Array(members[id, default: []])
         try await deletePhotos(ids)
@@ -127,11 +133,11 @@ final class DailyInboxFixture: PhotoLibraryService {
         return ids
     }
     func addPhotos(_ ids: [String], to groupID: String) async throws {
-        guard groupID == "editable", albumNames[groupID] != nil else { throw PhotoLibraryFailure.notEditable }
+        guard groupID != "readonly", albumNames[groupID] != nil else { throw PhotoLibraryFailure.notEditable }
         members[groupID, default: []].formUnion(ids)
     }
     func removePhotos(_ ids: [String], from groupID: String) async throws {
-        guard groupID == "editable", albumNames[groupID] != nil else { throw PhotoLibraryFailure.notEditable }
+        guard groupID != "readonly", albumNames[groupID] != nil else { throw PhotoLibraryFailure.notEditable }
         members[groupID, default: []].subtract(ids)
     }
     func deletePhotos(_ ids: [String]) async throws {

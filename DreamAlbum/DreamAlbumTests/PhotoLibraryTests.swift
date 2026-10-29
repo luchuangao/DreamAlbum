@@ -798,3 +798,22 @@ final class PhotoCalendarNavigationTests: XCTestCase {
         XCTAssertNil(batch.date); XCTAssertEqual(batch.progress, 0.5)
     }
 }
+
+
+final class SilverAppearanceTests: XCTestCase {
+    func testExistingThemeMigratesOnceThenRespectsChoice() {
+        let name = "SilverAppearanceTests." + UUID().uuidString
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        defaults.set("bluePearl", forKey: AppTheme.storageKey)
+        AppTheme.installSilverAppearance(in: defaults)
+        XCTAssertEqual(defaults.string(forKey: AppTheme.storageKey), "silver")
+        defaults.set("iceMint", forKey: AppTheme.storageKey)
+        AppTheme.installSilverAppearance(in: defaults)
+        XCTAssertEqual(defaults.string(forKey: AppTheme.storageKey), "iceMint")
+    }
+    func testLegacyIDsAndUnknownFallback() {
+        for theme in AppTheme.allCases { XCTAssertEqual(AppTheme.resolve(theme.rawValue), theme) }
+        XCTAssertEqual(AppTheme.resolve("future-or-missing-theme"), .silver)
+    }
+}

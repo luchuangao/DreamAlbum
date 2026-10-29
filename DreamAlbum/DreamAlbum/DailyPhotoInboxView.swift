@@ -112,7 +112,7 @@ struct DailyPhotoInboxView: View {
             let current = PhotoInboxBatch(today: clock.date, selectedDay: selectedDay, assets: library.photos, reviewed: library.session.reviewed)
             VStack(spacing: 0) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 40) {
                         header(current)
                         LimitedPhotosBanner()
                         if !library.hasAccess {
@@ -127,7 +127,7 @@ struct DailyPhotoInboxView: View {
                         }
                     }
                     .frame(maxWidth: 700, alignment: .leading)
-                    .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 24)
+                    .padding(.horizontal, 16).padding(.top, 32).padding(.bottom, 24)
                     .frame(maxWidth: .infinity)
                 }
                 if library.hasAccess && !current.items.isEmpty { actionBar(current) }
@@ -277,7 +277,7 @@ struct DailyPhotoInboxView: View {
                 .accessibilityLabel(c("继续整理 \(current.items.count) 张", "Continue, \(current.items.count) items"))
         }
         .frame(maxWidth: 700).padding(.horizontal, 20).padding(.vertical, 10).frame(maxWidth: .infinity)
-        .background(AlbumBackground()).overlay(alignment: .top) { Divider() }
+        .background(theme.utilityBackground).overlay(alignment: .top) { Divider() }
     }
     private var emptyInbox: some View {
         let hasOtherPending = selectedDay != nil && library.photos.contains { !library.session.reviewed.contains($0.id) }
