@@ -2,7 +2,7 @@ import SwiftUI
 
 /// App appearance is a device preference, independent of dream data and backups.
 enum AppTheme: String, CaseIterable, Identifiable {
-    case silver, mistBlue, iceMint, bluePearl
+    case silver, mistBlue, bluePearl
     static let storageKey = "dream_album.appearance_theme.v1"
     var id: String { rawValue }
     static func resolve(_ value: String) -> AppTheme { AppTheme(rawValue: value) ?? .silver }
@@ -14,58 +14,66 @@ enum AppTheme: String, CaseIterable, Identifiable {
         defaults.set(AppTheme.silver.rawValue, forKey: storageKey)
         defaults.set(true, forKey: key)
     }
-    var utilityBackground: Color { self == .silver ? Color(hex: 0xFAFAFC) : background }
-    var separator: Color { self == .silver ? Color(hex: 0xDDDEE3) : secondary.opacity(0.18) }
+    var utilityBackground: Color {
+        switch self {
+        case .silver: return Color(hex: 0xFAFAFC)
+        case .mistBlue: return Color(hex: 0xF7F9FC)
+        case .bluePearl: return Color(hex: 0xF8F6FB)
+        }
+    }
+    var separator: Color {
+        switch self {
+        case .silver: return Color(hex: 0xDDDEE3)
+        case .mistBlue: return Color(hex: 0xD2DAE4)
+        case .bluePearl: return Color(hex: 0xDAD3E2)
+        }
+    }
 
     func title(_ language: AppLanguage) -> String {
         switch self {
         case .silver: return AlbumCopy.pick(language, "原生银灰", "Native Silver")
         case .mistBlue: return AlbumCopy.pick(language, "雾蓝晨光", "Morning Blue")
-        case .iceMint: return AlbumCopy.pick(language, "冰蓝薄荷", "Ice Mint")
         case .bluePearl: return AlbumCopy.pick(language, "蓝紫珍珠", "Blue Pearl")
         }
     }
     var background: Color {
         switch self {
         case .silver: return Color(hex: 0xF2F2F5)
-        case .mistBlue: return Color(hex: 0xCEE2F7)
-        case .iceMint: return Color(hex: 0xCCEDE5)
-        case .bluePearl: return Color(hex: 0xD7D4F4)
+        case .mistBlue: return Color(hex: 0xE8EDF3)
+        case .bluePearl: return Color(hex: 0xECE9F1)
         }
     }
+    // Keep the established API for shared backgrounds and previews. A flat
+    // neutral field lets photos provide color without a full-screen tint shift.
     var gradient: LinearGradient {
-        let colors: [Color]
-        switch self {
-        case .silver: colors = [Color(hex: 0xF2F2F5), Color(hex: 0xF2F2F5)]
-        case .mistBlue: colors = [Color(hex: 0xC4DDF6), Color(hex: 0xD8E9FA), Color(hex: 0xC7DEF4)]
-        case .iceMint: colors = [Color(hex: 0xC3E7F6), Color(hex: 0xD3EFEA), Color(hex: 0xBFE7D9)]
-        case .bluePearl: colors = [Color(hex: 0xCAD9F6), Color(hex: 0xDDDCF6), Color(hex: 0xD5C5EF)]
-        }
-        return LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing)
+        LinearGradient(colors: [background, background], startPoint: .top, endPoint: .bottom)
     }
-    var surface: Color { self == .silver ? .white : .white.opacity(0.80) }
+    var surface: Color {
+        switch self {
+        case .silver: return .white
+        case .mistBlue: return Color(hex: 0xFCFDFE)
+        case .bluePearl: return Color(hex: 0xFDFBFE)
+        }
+    }
     var primary: Color {
         switch self {
         case .silver: return Color(hex: 0x202124)
-        case .mistBlue: return Color(hex: 0x233A58)
-        case .iceMint: return Color(hex: 0x203E49)
-        case .bluePearl: return Color(hex: 0x30334D)
+        case .mistBlue: return Color(hex: 0x253345)
+        case .bluePearl: return Color(hex: 0x34303F)
         }
     }
     var secondary: Color {
         switch self {
         case .silver: return Color(hex: 0x66686E)
-        case .mistBlue: return Color(hex: 0x4C5E76)
-        case .iceMint: return Color(hex: 0x466269)
-        case .bluePearl: return Color(hex: 0x53536A)
+        case .mistBlue: return Color(hex: 0x5D6878)
+        case .bluePearl: return Color(hex: 0x686174)
         }
     }
     var accent: Color {
         switch self {
         case .silver: return Color(hex: 0x2F6398)
-        case .mistBlue: return Color(hex: 0x205B9F)
-        case .iceMint: return Color(hex: 0x066A7C)
-        case .bluePearl: return Color(hex: 0x45499B)
+        case .mistBlue: return Color(hex: 0x3A638C)
+        case .bluePearl: return Color(hex: 0x645181)
         }
     }
     var destructive: Color { Color(hex: 0xC13F43) }
@@ -102,7 +110,8 @@ struct AppThemePicker: View {
                             option.gradient.frame(height: 72)
                                 .overlay(alignment: .bottomLeading) {
                                     Image(systemName: "photo.on.rectangle")
-                                        .font(.title2).foregroundStyle(option.accent).padding(16)
+                                        .font(.title2).foregroundStyle(option.accent).padding(10)
+                                        .background(option.surface, in: RoundedRectangle(cornerRadius: 10)).padding(12)
                                 }
                             HStack {
                                 Text(option.title(store.appLanguage)).font(.headline).foregroundStyle(theme.primary)

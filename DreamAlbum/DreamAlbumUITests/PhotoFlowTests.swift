@@ -305,7 +305,7 @@ final class PhotoFlowTests: XCTestCase {
     }
     func testReviewAndPhotoActionsFollowEachTheme() {
         launchDailyFixture()
-        for id in ["mistBlue", "iceMint", "bluePearl"] {
+        for id in ["mistBlue", "bluePearl"] {
             app.buttons["tab.me"].tap()
             let row = app.buttons["settings.theme"]
             for _ in 0..<4 where !row.isHittable { app.swipeUp() }
@@ -420,10 +420,59 @@ final class PhotoFlowTests: XCTestCase {
         XCTAssertEqual(visibleButton("today.pending").label, "待删 1")
         XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 3 张")
     }
+    func testRemovedMintFallsBackToSilver() {
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN", "-dream_album.app_language", "chinese", "-dream_album.appearance_theme.v1", "iceMint", "-dailyInboxFixture", "-resetDailyFixture", "-silverLayoutFixture"]
+        app.launch()
+        app.buttons["tab.me"].tap()
+        let row = app.buttons["settings.theme"]
+        for _ in 0..<4 where !row.isHittable { app.swipeUp() }
+        visibleButton("settings.theme").tap()
+        XCTAssertFalse(app.buttons["theme.option.iceMint"].exists)
+        XCTAssertEqual(visibleButton("theme.option.silver").value as? String, "已选择")
+        capture("removed-mint-fallback")
+    }
+    func testAllThemeSurfacesAcrossFourPagesAndDefault() {
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN", "-dream_album.app_language", "chinese", "-dailyInboxFixture", "-resetDailyFixture", "-silverLayoutFixture"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
+        var firstTheme = true
+        for id in ["silver", "mistBlue", "bluePearl", "silver"] {
+            app.buttons["tab.me"].tap()
+            let row = app.buttons["settings.theme"]
+            for _ in 0..<4 where !row.isHittable { app.swipeUp() }
+            visibleButton("settings.theme").tap()
+            let option = visibleButton("theme.option." + id)
+            XCTAssertFalse(app.buttons["theme.option.iceMint"].exists)
+            if firstTheme { XCTAssertEqual(option.value as? String, "已选择"); firstTheme = false }
+            option.tap()
+            XCTAssertEqual(option.value as? String, "已选择")
+            capture("surfaces-picker-" + id)
+            goBack()
+            app.buttons["tab.photos"].tap()
+            XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 4 张")
+            capture("surfaces-home-" + id)
+            app.buttons["tab.groups"].tap(); capture("surfaces-groups-" + id)
+            app.buttons["tab.dreams"].tap(); capture("surfaces-dreams-" + id)
+            app.buttons["tab.me"].tap()
+            let profile = app.staticTexts["照片与画册"]
+            for _ in 0..<4 where !profile.isHittable { app.swipeDown() }
+            capture("surfaces-management-" + id)
+        }
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "-resetDailyFixture" }
+        app.launch()
+        app.buttons["tab.me"].tap()
+        let row = app.buttons["settings.theme"]
+        for _ in 0..<4 where !row.isHittable { app.swipeUp() }
+        visibleButton("settings.theme").tap()
+        XCTAssertEqual(visibleButton("theme.option.silver").value as? String, "已选择")
+    }
     func testThemeSelectionPersistsAcrossTabsAndRelaunch() {
         launchDailyFixture()
         let remaining = app.staticTexts["today.remaining"].label
-        for (id, name) in [("silver", "原生银灰"), ("mistBlue", "雾蓝晨光"), ("iceMint", "冰蓝薄荷"), ("bluePearl", "蓝紫珍珠")] {
+        for (id, name) in [("silver", "原生银灰"), ("mistBlue", "雾蓝晨光"), ("bluePearl", "蓝紫珍珠")] {
             app.buttons["tab.me"].tap()
             let row = app.buttons["settings.theme"]
             for _ in 0..<4 where !row.isHittable { app.swipeUp() }
@@ -555,6 +604,51 @@ final class PhotoFlowTests: XCTestCase {
         visibleButton("从相册添加").tap()
         cancelSystemPhotoPicker(presenter: app.buttons["dream.addPhotos"], fromDetail: true)
         XCTAssertTrue(app.buttons["dream.addPhotos"].waitForExistence(timeout: 5))
+    }
+    func testReviewSwipeDownReturnsHomeWithoutDecision() {
+        launchDailyFixture()
+        visibleButton("today.continue").tap()
+        let first = readyReviewPhoto().identifier
+        let photo = readyReviewPhoto()
+        let from = photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+        let to = photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.49))
+        from.press(forDuration: 0.1, thenDragTo: to)
+        XCTAssertEqual(readyReviewPhoto().identifier, first)
+        let zoom = app.scrollViews["library.preview"]
+        zoom.pinch(withScale: 3, velocity: 1)
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", "100%"), object: zoom)], timeout: 5), .completed)
+        zoom.swipeDown()
+        XCTAssertEqual(readyReviewPhoto().identifier, first)
+        zoom.doubleTap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "100%"), object: zoom)], timeout: 5), .completed)
+        zoom.swipeDown()
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 16 张")
+        XCTAssertEqual(visibleButton("today.pending").label, "待删 0")
+        capture("down-dismiss-review-home")
+    }
+    func testPreviewAndOriginalSwipeDownRespectZoom() {
+        launchDailyFixture()
+        openAllPhotos(); visiblePhoto().tap(); readyPreviewPhoto()
+        app.scrollViews["library.preview"].swipeDown()
+        XCTAssertTrue(app.staticTexts["library.selection.title"].waitForExistence(timeout: 8))
+        XCTAssertEqual(visibleButton("library.pending").label, "待删 0")
+        capture("down-dismiss-preview-grid")
+        goBack()
+        visibleButton("today.continue").tap()
+        let first = readyReviewPhoto().identifier
+        readyReviewPhoto().tap(); readyPreviewPhoto()
+        let original = app.scrollViews["library.original"]
+        original.doubleTap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", "100%"), object: original)], timeout: 5), .completed)
+        original.swipeDown()
+        XCTAssertTrue(visibleButton("review.original.done").exists)
+        original.doubleTap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "100%"), object: original)], timeout: 5), .completed)
+        original.swipeDown()
+        XCTAssertEqual(readyReviewPhoto().identifier, first)
+        XCTAssertEqual(visibleButton("review.pending").label, "待删 0")
+        capture("down-dismiss-original-review")
     }
     func testReviewTapOriginalZoomAndReturnWithoutDecision() {
         launchDailyFixture()

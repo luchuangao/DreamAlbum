@@ -432,7 +432,7 @@ struct PhotoPreview: View {
                 else if let photo {
                     NativePhotoZoom(id: photo.id, service: library.service, language: store.appLanguage, isLivePhoto: photo.isLivePhoto, nextID: nextPhoto?.id,
                                     onWillSwipe: { commitSwipe(photo.id, delete: $0) },
-                                    onSwipe: { _ in advance(photo.id) }, onLoaded: { loaded = $0 })
+                                    onSwipe: { _ in advance(photo.id) }, onLoaded: { loaded = $0 }, onDismiss: { dismiss() })
                         .accessibilityAction(named: c("移至待删", "Mark for deletion")) { decide(photo.id, delete: true) }
                         .accessibilityAction(named: c("留在相册", "Keep photo")) { decide(photo.id, delete: false) }
                 }
@@ -526,7 +526,7 @@ struct PhotoReviewView: View {
                                 onWillSwipe: { commitSwipe(id, delete: $0) },
                                 onSwipe: { _ in finishSwipe() },
                                 onLoaded: { if current == id { loaded = $0 } },
-                                onTap: { openOriginal(id) })
+                                onTap: { openOriginal(id) }, onDismiss: { dismiss() })
                     .accessibilityLabel(c("照片", "Photo"))
                     .accessibilityHint(c("轻点查看原图", "Tap to view full size"))
                     .accessibilityAction { openOriginal(id) }
@@ -604,7 +604,7 @@ struct ReviewOriginalPhotoView: View {
     @Environment(\.dismiss) private var dismiss
     let id: String
     var body: some View {
-        NativePhotoZoom(id: id, service: library.service, language: store.appLanguage, fullResolution: true, isLivePhoto: library.photoByID[id]?.isLivePhoto == true)
+        NativePhotoZoom(id: id, service: library.service, language: store.appLanguage, fullResolution: true, isLivePhoto: library.photoByID[id]?.isLivePhoto == true, onDismiss: { dismiss() })
             .background(AlbumBackground())
             .navigationTitle(AlbumCopy.pick(store.appLanguage, "原图", "Full-size photo"))
             .navigationBarTitleDisplayMode(.inline)

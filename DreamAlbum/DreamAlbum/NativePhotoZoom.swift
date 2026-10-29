@@ -11,6 +11,14 @@ enum PhotoSwipeGesture {
             && abs(velocity.width) > abs(velocity.height) && translation.width * velocity.width > 0
         return abs(translation.width) > distance || flick
     }
+    static func dismisses(translation: CGSize, velocity: CGSize = .zero, height: CGFloat) -> Bool {
+        guard translation.height > abs(translation.width) * 1.2, velocity.height >= -350 else { return false }
+        let distance = min(160, max(90, height * 0.16))
+        let flick = translation.height >= 54 && velocity.height >= 700
+            && velocity.height > abs(velocity.width) * 1.2
+        return translation.height > distance || flick
+    }
+
 }
 
 /// UIScrollView supplies the familiar pinch, double-tap and pan behavior,
@@ -28,6 +36,7 @@ struct NativePhotoZoom: UIViewRepresentable {
     var onSwipe: ((Bool) -> Void)? = nil
     var onLoaded: ((Bool) -> Void)? = nil
     var onTap: (() -> Void)? = nil
+    var onDismiss: (() -> Void)? = nil
     func makeCoordinator() -> Coordinator { Coordinator() }
     func makeUIView(context: Context) -> PhotoZoomScrollView {
         let view = PhotoZoomScrollView()
@@ -47,6 +56,7 @@ struct NativePhotoZoom: UIViewRepresentable {
         view.onSwipe = onSwipe
         view.onWillSwipe = onWillSwipe
         view.onTap = onTap
+        view.onDismiss = onDismiss
         view.onLoaded = onLoaded
         view.readyLabel = AlbumCopy.pick(language, "已加载", "Ready")
         view.loadingLabel = AlbumCopy.pick(language, "加载中", "Loading")
@@ -70,6 +80,7 @@ struct NativePhotoZoom: UIViewRepresentable {
         view.onSwipe = nil
         view.onLoaded = nil
         view.onTap = nil
+        view.onDismiss = nil
         view.onLiveRetry = nil
         view.resetPhoto()
     }
@@ -172,6 +183,7 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate, PHLi
     let progress = UILabel()
     let retry = UIButton(type: .system)
     var onTap: (() -> Void)?
+    var onDismiss: (() -> Void)?
     var onLiveRetry: (() -> Void)?
     var onRetry: (() -> Void)?
     var onSwipe: ((Bool) -> Void)?
@@ -181,6 +193,7 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate, PHLi
     var loadingLabel = "Loading"
     var transitionLabel = "Changing"
     private var holdingLive = false
+    private var draggingDismissal = false
     private var reviewing = false
     private var transitioning = false
     private lazy var reviewPan = UIPanGestureRecognizer(target: self, action: #selector(swipePhoto(_:)))
@@ -227,6 +240,7 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate, PHLi
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     func cancelTransition() {
         transitioning = false
+        draggingDismissal = false
         layer.removeAllAnimations()
         transform = .identity; alpha = 1
     }
@@ -250,7 +264,9 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate, PHLi
         if gestureRecognizer === livePress { return onLiveRetry != nil && photo.image != nil && zoomScale <= 1.01 && !transitioning }
         guard gestureRecognizer === reviewPan else { return super.gestureRecognizerShouldBegin(gestureRecognizer) }
         let velocity = reviewPan.velocity(in: self)
-        return !transitioning && onSwipe != nil && photo.image != nil && zoomScale <= 1.01 && abs(velocity.x) > abs(velocity.y)
+        guard !transitioning, zoomScale <= 1.01 else { return false }
+        if abs(velocity.x) > abs(velocity.y) { return onSwipe != nil && photo.image != nil }
+        return onDismiss != nil && velocity.y > abs(velocity.x) * 1.15
     }
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         // A second finger hands control to native zooming, cancelling the
@@ -261,13 +277,31 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate, PHLi
     @objc private func swipePhoto(_ gesture: UIPanGestureRecognizer) {
         let translation = gesture.translation(in: superview)
         switch gesture.state {
-        case .began, .changed:
+        case .began:
+            let velocity = gesture.velocity(in: superview)
+            draggingDismissal = onDismiss != nil && velocity.y > abs(velocity.x) * 1.15
+            fallthrough
+        case .changed:
             stopLivePlayback()
             reviewing = true
-            transform = CGAffineTransform(translationX: translation.x, y: 0)
+            if draggingDismissal {
+                let distance = max(0, translation.y)
+                transform = CGAffineTransform(translationX: translation.x * 0.2, y: distance)
+                alpha = max(0.75, 1 - distance / max(1, bounds.height) * 0.25)
+            } else { transform = CGAffineTransform(translationX: translation.x, y: 0) }
         case .ended:
             reviewing = false
             let velocity = gesture.velocity(in: superview)
+            // Lock the initial direction so a downward drag cannot write a decision.
+            if draggingDismissal {
+                draggingDismissal = false
+                if zoomScale <= 1.01, onDismiss != nil, PhotoSwipeGesture.dismisses(
+                    translation: CGSize(width: translation.x, height: translation.y),
+                    velocity: CGSize(width: velocity.x, height: velocity.y), height: bounds.height) {
+                    closePhoto()
+                } else { returnToCenter() }
+                return
+            }
             let delete = translation.x < 0
             if zoomScale <= 1.01 && PhotoSwipeGesture.commits(
                 translation: CGSize(width: translation.x, height: translation.y),
@@ -287,12 +321,27 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate, PHLi
             } else { returnToCenter() }
         default:
             reviewing = false
+            draggingDismissal = false
             returnToCenter()
+        }
+    }
+    private func closePhoto() {
+        transitioning = true
+        photo.accessibilityValue = transitionLabel
+        let reduced = UIAccessibility.isReduceMotionEnabled
+        UIView.animate(withDuration: reduced ? 0.08 : 0.16, delay: 0, options: [.curveEaseIn]) {
+            if !reduced { self.transform = CGAffineTransform(translationX: 0, y: self.bounds.height) }
+            self.alpha = 0
+        } completion: { [weak self] finished in
+            guard let self, finished, transitioning else { return }
+            transitioning = false
+            onDismiss?()
         }
     }
     private func returnToCenter() {
         UIView.animate(withDuration: UIAccessibility.isReduceMotionEnabled ? 0.08 : 0.28, delay: 0, usingSpringWithDamping: 0.88, initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
             self.transform = .identity
+            self.alpha = 1
         }
     }
 

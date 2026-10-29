@@ -497,6 +497,20 @@ final class DeletePresentationTests: XCTestCase {
 }
 
 final class PhotoSwipeGestureTests: XCTestCase {
+    func testDownwardDismissalRejectsOtherDirectionsAndSmallDrags() {
+        XCTAssertTrue(PhotoSwipeGesture.dismisses(translation: CGSize(width: 12, height: 200), height: 800))
+        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 12, height: -200), height: 800))
+        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 240, height: 200), height: 800))
+        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 200, height: 12), height: 800))
+        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 2, height: 35), velocity: CGSize(width: 0, height: 1200), height: 800))
+    }
+    func testDownwardDismissalSupportsIntentionalFlickAndTabletDistance() {
+        XCTAssertTrue(PhotoSwipeGesture.dismisses(translation: CGSize(width: 5, height: 70), velocity: CGSize(width: 20, height: 900), height: 1100))
+        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 5, height: 70), velocity: CGSize(width: 20, height: -900), height: 1100))
+        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 5, height: 110), height: 1100))
+        XCTAssertTrue(PhotoSwipeGesture.dismisses(translation: CGSize(width: 5, height: 210), height: 1100))
+        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 5, height: 210), velocity: CGSize(width: 0, height: -900), height: 1100))
+    }
     func testPhoneAndWideScreenDragsUseReachableDistances() {
         XCTAssertTrue(PhotoSwipeGesture.commits(translation: CGSize(width: -110, height: 10), width: 393))
         XCTAssertTrue(PhotoSwipeGesture.commits(translation: CGSize(width: 180, height: 10), width: 834))
@@ -808,12 +822,13 @@ final class SilverAppearanceTests: XCTestCase {
         defaults.set("bluePearl", forKey: AppTheme.storageKey)
         AppTheme.installSilverAppearance(in: defaults)
         XCTAssertEqual(defaults.string(forKey: AppTheme.storageKey), "silver")
-        defaults.set("iceMint", forKey: AppTheme.storageKey)
+        defaults.set("mistBlue", forKey: AppTheme.storageKey)
         AppTheme.installSilverAppearance(in: defaults)
-        XCTAssertEqual(defaults.string(forKey: AppTheme.storageKey), "iceMint")
+        XCTAssertEqual(defaults.string(forKey: AppTheme.storageKey), "mistBlue")
     }
     func testLegacyIDsAndUnknownFallback() {
         for theme in AppTheme.allCases { XCTAssertEqual(AppTheme.resolve(theme.rawValue), theme) }
         XCTAssertEqual(AppTheme.resolve("future-or-missing-theme"), .silver)
+        XCTAssertEqual(AppTheme.resolve("iceMint"), .silver)
     }
 }
