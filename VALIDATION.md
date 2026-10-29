@@ -281,3 +281,8 @@ Downward drags at the original scale close at 12pt with a vertical direction loc
 - Final simulator build-button.log, signed iOS build-device-button.log and Catalyst build-mac-button.log succeeded. Version 1.1 (19), git diff --check passed. Raw evidence remains ignored under .ui-checks/import-dismiss-v19/.
 
 The functional revision installed over the existing app on iPhone 15 (device-install.json: success). The final white-button-text revision could not install after device disconnection (device-install-final.json: failed; device unavailable). Do not claim the final revision is installed or launched. No uninstall, data reset, physical-photo deletion or App Store publication. Real iCloud downloads, low-storage handling and Live Photo need separate physical-device checks. Source and documentation are synchronized to GitHub under AGENTS.md.
+
+
+### Build 19 physical-device installation completed
+
+On 2026-10-29 the paired iPhone 15 reconnected. The final signed version 1.1 (19), including the white import-button text, installed successfully over the existing app (device-install-reconnected.json: success). Automatic launch was denied because the phone was locked (device-launch-reconnected.json: failed, Locked). The user can open the installed app after unlocking. This supersedes the earlier final-install blocker, but does not claim successful launch or physical-device interaction tests. No uninstall or data reset.
