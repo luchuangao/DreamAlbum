@@ -605,6 +605,31 @@ final class PhotoFlowTests: XCTestCase {
         cancelSystemPhotoPicker(presenter: app.buttons["dream.addPhotos"], fromDetail: true)
         XCTAssertTrue(app.buttons["dream.addPhotos"].waitForExistence(timeout: 5))
     }
+    func testSingleImportButtonAddsVisibleAlbumAndLogoStillOpensPicker() {
+        launchDailyFixture()
+        openAllPhotos(); visibleButton("选择").tap(); visiblePhoto().tap()
+        visibleButton("library.action.dreams").tap()
+        let name = "导入" + String(UUID().uuidString.prefix(6))
+        let field = app.textFields["画册名称（最多12字）"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5)); field.tap(); field.typeText(name)
+        let add = app.buttons["dream.import.add"]
+        XCTAssertTrue(add.isEnabled)
+        capture("import-primary-button")
+        add.tap()
+        XCTAssertTrue(app.buttons["library.action.dreams"].waitForExistence(timeout: 15))
+        app.buttons["tab.dreams"].tap()
+        let album = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", name, "独立副本")).firstMatch
+        XCTAssertTrue(album.waitForExistence(timeout: 8))
+        capture("import-visible-album")
+        app.terminate(); app.launchArguments.removeAll { $0 == "-resetDailyFixture" }; app.launch()
+        app.buttons["tab.dreams"].tap()
+        XCTAssertTrue(album.waitForExistence(timeout: 8))
+        app.buttons["tab.me"].tap()
+        let logo = visibleButton("profile.avatar")
+        capture("profile-logo-without-camera")
+        logo.tap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == false"), object: logo)], timeout: 8), .completed)
+    }
     func testReviewSwipeDownReturnsHomeWithoutDecision() {
         launchDailyFixture()
         visibleButton("today.continue").tap()
@@ -613,6 +638,9 @@ final class PhotoFlowTests: XCTestCase {
         let from = photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
         let to = photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.49))
         from.press(forDuration: 0.1, thenDragTo: to)
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 16 张")
+        visibleButton("today.continue").tap()
         XCTAssertEqual(readyReviewPhoto().identifier, first)
         let zoom = app.scrollViews["library.preview"]
         zoom.pinch(withScale: 3, velocity: 1)
@@ -1086,8 +1114,7 @@ final class PhotoFlowTests: XCTestCase {
         let albumName = app.textFields["画册名称（最多12字）"]
         XCTAssertTrue(albumName.waitForExistence(timeout: 5))
         albumName.tap(); albumName.typeText("海边旅行")
-        app.buttons["保存图片副本"].tap()
-        let commit = app.buttons["加入梦想画册"].firstMatch
+        let commit = app.buttons["dream.import.add"]
         waitEnabled(commit); commit.tap()
         XCTAssertTrue(app.buttons["完成"].waitForExistence(timeout: 8))
         goBack()

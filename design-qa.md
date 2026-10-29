@@ -25,3 +25,14 @@ iPhone17Pro 为402×874pt、1206×2622px，四页对照统一裁去顶部186px�
 初轮 iPad 四页测试在查询主题选项时超时，保留失败包；其余六场景通过，单独重跑四页及偏好保持成功。没有把该超时计为成功或隐去。未发现未解决的P0/P1/P2视觉问题；P3是不同iOS版本的原生符号/选择动画细节。完整动态字体、VoiceOver、真实Live Photo与iCloud下载、万张图库压力测试不由本轮替代。
 
 final result: passed
+
+
+## Build 19 follow-up: import, logo and dismissal
+
+Reference: the user's two phone screenshots show an ordinary text-style import entry after saving and a camera badge on the logo. The implementation uses a full-width theme-colored button with white text and at least 44pt target height. Saving and committing are one action. Partial failure keeps retry and an explicit partial-import action. The logo loses its badge but retains PhotosPicker.
+
+Runtime evidence: .ui-checks/import-dismiss-v19/iphone-final-overview.png and ipad-final-overview.png were opened. Viewports are 402x874pt and 834x1210pt, with isolated fixture photos and unique test album names. Imported covers and counts are visible, survive relaunch, the avatar has no badge, and dismissal returns home with 16 remaining and pending 0. The reference selects an existing album while screenshots create a new album; existing-target append and legacy placeholders are covered by units, not claimed as screenshot-identical private data.
+
+The initial overview exposed inherited black button text. Explicit white text was added and iphone-primary-final.png opened to verify the final appearance and keyboard-visible target. Both devices repeated import/relaunch/avatar checks successfully. Native fonts, existing background and layout, photo colors and symbols remain. Short drag dismissal, zoom protection and horizontal undo passed on both. Tiny accidental drags do not force closure.
+
+Build 19 visual result: passed. This targeted review does not certify full accessibility, every keyboard/orientation or large real-library performance.

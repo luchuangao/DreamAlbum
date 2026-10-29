@@ -221,37 +221,63 @@ struct DreamImportView: View {
                 }
             }
             Section {
-                if !began {
-                    Text(c("已选择 \(ids.count) 张照片", "\(ids.count) photos selected"))
-                    Button(c("保存图片副本", "Save image copies")) { began = true; importer.run(ids: ids, service: library.service) }
-                        .disabled(ids.isEmpty || (targetID == nil && (title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !store.canCreateDream)))
-                } else {
-                    if importer.isRunning {
-                        ProgressView(value: importer.progress)
-                        Text(c("正在下载并保存图片…", "Downloading and saving images…")).font(.caption).foregroundStyle(.secondary)
-                    }
-                    Text(c("已保存 \(importer.ready.count) / \(ids.count) 张", "Saved \(importer.ready.count) / \(ids.count)"))
-                    if !importer.failed.isEmpty {
-                        Text(importer.error ?? c("部分图片保存失败", "Some images could not be saved")).font(.caption).foregroundStyle(theme.destructive)
-                        Button(c("重试失败的 \(importer.failed.count) 张", "Retry \(importer.failed.count) failed photos")) { importer.run(ids: importer.failed, service: library.service) }.disabled(importer.isRunning)
-                    }
-                    Button(c("加入梦想画册", "Add to dream album")) {
-                        if importer.commit(to: targetID, title: title.trimmingCharacters(in: .whitespacesAndNewlines), store: store) { dismiss() }
-                        else { commitFailed = true }
-                    }.disabled(importer.isRunning || importer.ready.isEmpty)
+                Text(c("已选择 \(ids.count) 张照片", "\(ids.count) photos selected"))
+                if importer.isRunning {
+                    ProgressView(value: importer.progress)
+                    Text(c("正在加入…", "Adding…")).font(.caption).foregroundStyle(.secondary)
+                }
+                if !importer.failed.isEmpty {
+                    Text(importer.error ?? c("部分图片保存失败", "Some images could not be saved"))
+                        .font(.caption).foregroundStyle(theme.destructive)
+                    Button(c("重试失败的 \(importer.failed.count) 张", "Retry \(importer.failed.count) failed photos")) {
+                        importer.run(ids: importer.failed, service: library.service)
+                    }.disabled(importer.isRunning)
                 }
             }
+            Section {
+                Button {
+                    if !began {
+                        began = true
+                        importer.run(ids: ids, service: library.service)
+                    } else { finishImport() }
+                } label: {
+                    HStack {
+                        Spacer()
+                        if importer.isRunning { ProgressView().tint(.white) }
+                        Text(importer.isRunning ? c("正在加入…", "Adding…")
+                            : (!importer.failed.isEmpty ? c("加入已保存的 \(importer.ready.count) 张", "Add \(importer.ready.count) saved photos")
+                                : c("加入梦想画册", "Add to dream album")))
+                            .font(.headline)
+                        Spacer()
+                    }.frame(minHeight: 44).foregroundStyle(.white)
+                }
+                .buttonStyle(.borderedProminent).tint(theme.accent)
+                .listRowBackground(Color.clear).listRowInsets(EdgeInsets())
+                .accessibilityIdentifier("dream.import.add")
+                .disabled(importer.isRunning || ids.isEmpty
+                    || (began && importer.ready.isEmpty)
+                    || (targetID == nil && (title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !store.canCreateDream)))
+            }
+
         }
         .scrollContentBackground(.hidden)
             .background(AlbumBackground())
             .navigationTitle(c("加入梦想画册", "Add to dream album")).navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button(c("取消", "Cancel")) { importer.close(); dismiss() } } }
+        .onChange(of: importer.isRunning) { _, running in
+            if began && !running && importer.failed.isEmpty && !importer.ready.isEmpty { finishImport() }
+        }
         .onDisappear { importer.close() }
         .alert(c("画册已不可用", "Album unavailable"), isPresented: $commitFailed) {
             Button(c("好", "OK")) { }
         } message: { Text(c("请重新选择画册。", "Choose another album.")) }
         .preferredColorScheme(.light)
     }
+    private func finishImport() {
+        if importer.commit(to: targetID, title: title.trimmingCharacters(in: .whitespacesAndNewlines), store: store) { dismiss() }
+        else { commitFailed = true }
+    }
+
 }
 
 private struct DreamCoverImage: View {
@@ -352,13 +378,16 @@ struct DreamGalleryView: View {
 
     }
     private func cover(_ dream: Dream) -> some View {
-        ZStack(alignment: .bottomLeading) {
-            DreamCoverImage(path: dream.imagePaths.first).allowsHitTesting(false).accessibilityHidden(true)
+        let actualPaths = dream.imagePaths.filter { !$0.hasPrefix("sample:") }
+        let coverPath = actualPaths.first ?? dream.imagePaths.first
+        let photoCount = actualPaths.count
+        return ZStack(alignment: .bottomLeading) {
+            DreamCoverImage(path: coverPath).allowsHitTesting(false).accessibilityHidden(true)
             LinearGradient(colors: [.clear, .black.opacity(0.88)], startPoint: .center, endPoint: .bottom)
             VStack(alignment: .leading, spacing: 8) {
                 Text(dream.title).font(.title2.bold()).foregroundStyle(.white).lineLimit(2)
                 HStack {
-                    Text(dream.imagePaths.first?.hasPrefix("sample:") == true ? c("内置示例画面", "Built-in sample") : c("已保存独立副本 · \(dream.imagePaths.count) 张照片", "Independent copies · \(dream.imagePaths.count) photos")).font(.caption).foregroundStyle(.white.opacity(0.76))
+                    Text(coverPath?.hasPrefix("sample:") == true ? c("内置示例画面", "Built-in sample") : c("已保存独立副本 · \(photoCount) 张照片", "Independent copies · \(photoCount) photos")).font(.caption).foregroundStyle(.white.opacity(0.76))
                     Spacer()
                     Image(systemName: "chevron.right").font(.caption).foregroundStyle(.white.opacity(0.8))
                 }
@@ -368,8 +397,8 @@ struct DreamGalleryView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .contentShape(RoundedRectangle(cornerRadius: 14))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(dream.title + "，" + (dream.imagePaths.first?.hasPrefix("sample:") == true
+        .accessibilityLabel(dream.title + "，" + (coverPath?.hasPrefix("sample:") == true
             ? c("内置示例画面", "Built-in sample")
-            : c("已保存独立副本 · \(dream.imagePaths.count) 张照片", "Independent copies · \(dream.imagePaths.count) photos")))
+            : c("已保存独立副本 · \(photoCount) 张照片", "Independent copies · \(photoCount) photos")))
     }
 }

@@ -273,6 +273,34 @@ final class PhotoLibraryStoreTests: XCTestCase {
         XCTAssertEqual(dreams.activeDreams.first?.imagePaths, [path])
         XCTAssertNotNil(UIImage(contentsOfFile: url.path))
     }
+    func testImportReplacesSampleCoverAndCommitsOnlyOnce() async throws {
+        let service = FakePhotoLibrary(); let dreams = DreamStore(); let before = dreams.dreams
+        defer { dreams.dreams = before }
+        let target = Dream(title: "示例测试", visionText: "", imagePaths: ["sample:marathon"])
+        dreams.dreams = [target]
+        let importer = DreamPhotoImport(); importer.run(ids: ["a"], service: service)
+        while importer.isRunning { try await Task.sleep(for: .milliseconds(10)) }
+        let path = try XCTUnwrap(importer.ready.first?.path)
+        defer { if let url = ImageLibrary.imageURL(for: path) { try? FileManager.default.removeItem(at: url) } }
+        XCTAssertTrue(importer.commit(to: target.id, title: "", store: dreams))
+        XCTAssertEqual(dreams.activeDreams.first?.imagePaths, [path])
+        XCTAssertFalse(importer.commit(to: target.id, title: "", store: dreams))
+        importer.close()
+        XCTAssertNotNil(UIImage(contentsOfFile: ImageLibrary.imageURL(for: path)!.path))
+    }
+    func testImportAppendsWithoutRemovingUserPhotos() async throws {
+        let service = FakePhotoLibrary(); let dreams = DreamStore(); let before = dreams.dreams
+        defer { dreams.dreams = before }
+        let target = Dream(title: "已有照片", visionText: "", imagePaths: ["existing-user-photo.jpg"])
+        dreams.dreams = [target]
+        let importer = DreamPhotoImport(); importer.run(ids: ["b"], service: service)
+        while importer.isRunning { try await Task.sleep(for: .milliseconds(10)) }
+        let path = try XCTUnwrap(importer.ready.first?.path)
+        defer { if let url = ImageLibrary.imageURL(for: path) { try? FileManager.default.removeItem(at: url) } }
+        XCTAssertTrue(importer.commit(to: target.id, title: "", store: dreams))
+        importer.close()
+        XCTAssertEqual(dreams.dreams.first?.imagePaths, ["existing-user-photo.jpg", path])
+    }
     func testLargeLibrarySnapshotDoesNotRequestImages() async {
         let service = FakePhotoLibrary()
         service.state.photos = (0..<10_000).map { LibraryPhoto(id: String($0), date: nil, isScreenshot: false, isLivePhoto: false) }
@@ -497,19 +525,17 @@ final class DeletePresentationTests: XCTestCase {
 }
 
 final class PhotoSwipeGestureTests: XCTestCase {
-    func testDownwardDismissalRejectsOtherDirectionsAndSmallDrags() {
-        XCTAssertTrue(PhotoSwipeGesture.dismisses(translation: CGSize(width: 12, height: 200), height: 800))
-        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 12, height: -200), height: 800))
-        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 240, height: 200), height: 800))
-        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 200, height: 12), height: 800))
-        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 2, height: 35), velocity: CGSize(width: 0, height: 1200), height: 800))
+    func testDownwardDismissalRejectsOtherDirectionsAndTinyDrags() {
+        XCTAssertTrue(PhotoSwipeGesture.dismisses(translation: CGSize(width: 12, height: 200)))
+        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 12, height: -200)))
+        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 240, height: 200)))
+        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 200, height: 12)))
+        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 0, height: 5)))
     }
-    func testDownwardDismissalSupportsIntentionalFlickAndTabletDistance() {
-        XCTAssertTrue(PhotoSwipeGesture.dismisses(translation: CGSize(width: 5, height: 70), velocity: CGSize(width: 20, height: 900), height: 1100))
-        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 5, height: 70), velocity: CGSize(width: 20, height: -900), height: 1100))
-        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 5, height: 110), height: 1100))
-        XCTAssertTrue(PhotoSwipeGesture.dismisses(translation: CGSize(width: 5, height: 210), height: 1100))
-        XCTAssertFalse(PhotoSwipeGesture.dismisses(translation: CGSize(width: 5, height: 210), velocity: CGSize(width: 0, height: -900), height: 1100))
+    func testShortDownwardDragsCloseWithoutDependingOnReleaseVelocity() {
+        XCTAssertTrue(PhotoSwipeGesture.dismisses(translation: CGSize(width: 0, height: 12)))
+        XCTAssertTrue(PhotoSwipeGesture.dismisses(translation: CGSize(width: 5, height: 35)))
+        XCTAssertTrue(PhotoSwipeGesture.dismisses(translation: CGSize(width: 5, height: 110)))
     }
     func testPhoneAndWideScreenDragsUseReachableDistances() {
         XCTAssertTrue(PhotoSwipeGesture.commits(translation: CGSize(width: -110, height: 10), width: 393))

@@ -267,3 +267,17 @@ SwiftUI 通过环境主题值驱动页面，UIKit 网格选中标记、加载失
 ### 2026-10-29 构建18真机安装补验
 
 手机恢复连接后，版本1.1（18）已覆盖安装到配对iPhone15并成功启动。`device-install-connected.json`、`device-launch-connected.json` 均为success，原始回执仅留本机 `.ui-checks/theme-refinement-v18/`。未卸载或清空数据；本次验证安装与启动，不代表真实图库、iCloud、Live Photo或全部手势专项验收。
+
+
+## 2026-10-29 One-step import and short dismissal (build 19)
+
+The prominent import button now saves independent copies and commits them in one action, then dismisses on full success. Failed items can retry; partial imports require an explicit choice. Cancellation cleans unused copies. Appending replaces sample placeholders while preserving user photos. Gallery covers prefer real photos in legacy mixed albums and count real photos. The profile camera badge is removed; tapping the logo still opens PhotosPicker and preserves avatar import/reset.
+
+Downward drags at the original scale close at 12pt with a vertical direction lock. Tiny or cancelled gestures reset without a spring. Zoomed panning and horizontal decisions/undo remain available.
+
+- iphone-final.xcresult: 69 unit and 4 UI tests passed; ipad-final.xcresult: the same 4 UI scenarios passed. New units cover sample replacement, commit-once ownership, copy survival after close and preserving existing photos. Existing import failure/retry/cancellation and independent-copy deletion tests also passed.
+- UI coverage: one button import, visible album, restart persistence and logo picker; short review dismissal with zoom protection; preview/original dismissal with zoom protection; horizontal decisions/undo. Initial short-drag tests failed on both devices; recordings showed no dismissal. Fixed direction locking at recognizer start and the short-distance rule, then both passed. Failed bundles are retained.
+- Visual review of iphone-final-overview.png and ipad-final-overview.png found inherited black button text. Explicit white text fixed it; iphone-button.xcresult and ipad-button.xcresult each passed the import/persistence/avatar scenario again. iphone-primary-final.png was opened and verified. This final color-only edit did not change gesture or model logic.
+- Final simulator build-button.log, signed iOS build-device-button.log and Catalyst build-mac-button.log succeeded. Version 1.1 (19), git diff --check passed. Raw evidence remains ignored under .ui-checks/import-dismiss-v19/.
+
+The functional revision installed over the existing app on iPhone 15 (device-install.json: success). The final white-button-text revision could not install after device disconnection (device-install-final.json: failed; device unavailable). Do not claim the final revision is installed or launched. No uninstall, data reset, physical-photo deletion or App Store publication. Real iCloud downloads, low-storage handling and Live Photo need separate physical-device checks. Source and documentation are synchronized to GitHub under AGENTS.md.

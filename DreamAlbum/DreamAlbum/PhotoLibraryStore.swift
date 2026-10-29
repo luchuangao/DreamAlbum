@@ -167,6 +167,8 @@ final class DreamPhotoImport: ObservableObject {
         guard !closed, !isRunning, !ready.isEmpty else { return false }
         if let dreamID {
             guard var dream = store.dreams.first(where: { $0.id == dreamID }) else { return false }
+            // Sample paths are placeholders, not the user's album photos.
+            dream.imagePaths.removeAll { $0.hasPrefix("sample:") }
             dream.imagePaths.append(contentsOf: ready.map(\.path))
             store.update(dream)
         } else {

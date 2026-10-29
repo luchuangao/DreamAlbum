@@ -205,18 +205,9 @@ private struct ProfileAvatarPicker: View {
                         Circle().stroke(.white.opacity(0.88), lineWidth: max(2, size * 0.04))
                     }
                     .shadow(color: Color.albumInk.opacity(0.16), radius: 14, x: 0, y: 8)
-
-                Image(systemName: "camera.fill")
-                    .font(.system(size: max(11, size * 0.18), weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: max(24, size * 0.34), height: max(24, size * 0.34))
-                    .background(Color.albumGreen, in: Circle())
-                    .overlay {
-                        Circle().stroke(.white.opacity(0.9), lineWidth: 2)
-					}
-					.offset(x: size * 0.03, y: size * 0.03)
 			}
 			.accessibilityLabel(changeAvatarLabel)
+            .accessibilityIdentifier("profile.avatar")
 		}
 		.buttonStyle(.plain)
 		.contextMenu {

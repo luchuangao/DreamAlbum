@@ -11,12 +11,8 @@ enum PhotoSwipeGesture {
             && abs(velocity.width) > abs(velocity.height) && translation.width * velocity.width > 0
         return abs(translation.width) > distance || flick
     }
-    static func dismisses(translation: CGSize, velocity: CGSize = .zero, height: CGFloat) -> Bool {
-        guard translation.height > abs(translation.width) * 1.2, velocity.height >= -350 else { return false }
-        let distance = min(160, max(90, height * 0.16))
-        let flick = translation.height >= 54 && velocity.height >= 700
-            && velocity.height > abs(velocity.width) * 1.2
-        return translation.height > distance || flick
+    static func dismisses(translation: CGSize) -> Bool {
+        translation.height >= 12 && translation.height > abs(translation.width) * 1.2
     }
 
 }
@@ -265,8 +261,12 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate, PHLi
         guard gestureRecognizer === reviewPan else { return super.gestureRecognizerShouldBegin(gestureRecognizer) }
         let velocity = reviewPan.velocity(in: self)
         guard !transitioning, zoomScale <= 1.01 else { return false }
-        if abs(velocity.x) > abs(velocity.y) { return onSwipe != nil && photo.image != nil }
-        return onDismiss != nil && velocity.y > abs(velocity.x) * 1.15
+        if abs(velocity.x) > abs(velocity.y) {
+            draggingDismissal = false
+            return onSwipe != nil && photo.image != nil
+        }
+        draggingDismissal = onDismiss != nil && velocity.y > abs(velocity.x) * 1.15
+        return draggingDismissal
     }
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         // A second finger hands control to native zooming, cancelling the
@@ -278,8 +278,7 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate, PHLi
         let translation = gesture.translation(in: superview)
         switch gesture.state {
         case .began:
-            let velocity = gesture.velocity(in: superview)
-            draggingDismissal = onDismiss != nil && velocity.y > abs(velocity.x) * 1.15
+            // The recognizer locks the axis before beginning, including slow drags.
             fallthrough
         case .changed:
             stopLivePlayback()
@@ -296,10 +295,9 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate, PHLi
             if draggingDismissal {
                 draggingDismissal = false
                 if zoomScale <= 1.01, onDismiss != nil, PhotoSwipeGesture.dismisses(
-                    translation: CGSize(width: translation.x, height: translation.y),
-                    velocity: CGSize(width: velocity.x, height: velocity.y), height: bounds.height) {
+                    translation: CGSize(width: translation.x, height: translation.y)) {
                     closePhoto()
-                } else { returnToCenter() }
+                } else { returnToCenter(spring: false) }
                 return
             }
             let delete = translation.x < 0
@@ -321,8 +319,9 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate, PHLi
             } else { returnToCenter() }
         default:
             reviewing = false
+            let wasDismissal = draggingDismissal
             draggingDismissal = false
-            returnToCenter()
+            returnToCenter(spring: !wasDismissal)
         }
     }
     private func closePhoto() {
@@ -338,7 +337,13 @@ final class PhotoZoomScrollView: UIScrollView, UIGestureRecognizerDelegate, PHLi
             onDismiss?()
         }
     }
-    private func returnToCenter() {
+    private func returnToCenter(spring: Bool = true) {
+        if !spring {
+            UIView.animate(withDuration: 0.1, delay: 0, options: [.beginFromCurrentState, .curveEaseOut]) {
+                self.transform = .identity; self.alpha = 1
+            }
+            return
+        }
         UIView.animate(withDuration: UIAccessibility.isReduceMotionEnabled ? 0.08 : 0.28, delay: 0, usingSpringWithDamping: 0.88, initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
             self.transform = .identity
             self.alpha = 1
