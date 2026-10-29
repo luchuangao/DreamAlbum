@@ -262,3 +262,8 @@ SwiftUI 通过环境主题值驱动页面，UIKit 网格选中标记、加载失
 - 先采集构建17四页再调整，最终前后对照 `comparison-final-{mistBlue,bluePearl}.png`、双设备三主题总览和 `gestures-final-{iphone,ipad}.png` 已人工查看。主要文字/次级文字/操作色最小对比度：雾蓝10.89/4.80/5.34，蓝紫10.66/4.93/5.76；仅为指定表面颜色计算，完整辅助功能未由此证明。具体视觉依据、视口、状态差异与五项核验见 `design-qa.md`。
 
 本轮两次检查配对iPhone15均为 unavailable，构建18尚未安装到该真机，不能声称真机验证通过。未卸载、清空数据、删除手机照片或发布App Store。所有原始测试、截图、设备与签名资料仅留本机忽略目录；源代码及本摘要按AGENTS.md提交并同步GitHub，保留远程历史。
+
+
+### 2026-10-29 构建18真机安装补验
+
+手机恢复连接后，版本1.1（18）已覆盖安装到配对iPhone15并成功启动。`device-install-connected.json`、`device-launch-connected.json` 均为success，原始回执仅留本机 `.ui-checks/theme-refinement-v18/`。未卸载或清空数据；本次验证安装与启动，不代表真实图库、iCloud、Live Photo或全部手势专项验收。
