@@ -934,6 +934,30 @@ final class PhotoFlowTests: XCTestCase {
         markFixturePhoto()
         capture("pending-destructive-button")
     }
+    func testUnmarkedPhotoCanBeViewedAndReturnsToInboxAfterRelaunch() {
+        launchDailyFixture()
+        visibleButton("today.continue").tap()
+        let id = String(readyReviewPhoto().identifier.dropFirst("review.photo.".count))
+        readyReviewPhoto().swipeLeft()
+        visibleButton("review.pending").tap()
+        visibleButton("取消待删").tap()
+        let view = app.buttons["pending.restored.view." + id]
+        XCTAssertTrue(view.waitForExistence(timeout: 5))
+        capture("unmarked-photo-view-entry")
+        view.tap()
+        XCTAssertEqual(readyPreviewPhoto().identifier, "preview.photo." + id)
+        capture("unmarked-photo-preview")
+        readyPreviewPhoto().swipeDown()
+        visibleButton("完成").tap()
+        visibleButton("关闭整理").tap()
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 16 张")
+        XCTAssertEqual(visibleButton("today.pending").label, "待删 0")
+        app.terminate(); app.launchArguments.removeAll { $0 == "-resetDailyFixture" }; app.launch()
+        XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.staticTexts["today.remaining"].label, "还剩 16 张")
+        openAllPhotos()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "library.photo." + id).firstMatch.waitForExistence(timeout: 8))
+    }
     private func markFixturePhoto() {
         visibleButton("today.continue").tap()
         XCTAssertFalse(app.buttons["移至待删"].exists)

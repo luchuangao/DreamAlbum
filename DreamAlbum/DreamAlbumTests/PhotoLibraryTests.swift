@@ -115,6 +115,27 @@ final class PhotoReviewSessionTests: XCTestCase {
         session.decide("a", delete: true); session.clearPending(); session.undo()
         XCTAssertTrue(session.pendingDeletion.isEmpty)
     }
+    func testUnmarkReturnsPhotoToReviewAndSurvivesCodingAndUndo() throws {
+        var session = PhotoReviewSession()
+        session.resume(["a", "b"]); session.decide("a", delete: true); session.decide("b", delete: false)
+        session.unmark("a")
+        XCTAssertEqual(session.currentID, "a")
+        XCTAssertFalse(session.reviewed.contains("a")); XCTAssertTrue(session.reviewed.contains("b"))
+        XCTAssertFalse(session.pendingDeletion.contains("a"))
+        var restored = try JSONDecoder().decode(PhotoReviewSession.self, from: JSONEncoder().encode(session))
+        restored.undo()
+        XCTAssertFalse(restored.reviewed.contains("a")); XCTAssertFalse(restored.pendingDeletion.contains("a"))
+    }
+    func testUnmarkOutsideQueueReturnsToInboxAndNoOpPreservesKeptPhoto() {
+        var session = PhotoReviewSession()
+        session.decide("a", delete: true); session.resume(["b"]); session.decide("b", delete: false)
+        session.unmark("a"); session.unmark("b"); session.unmark("missing")
+        XCTAssertEqual(session.reviewed, ["b"])
+        let today = Date()
+        let photos = [LibraryPhoto(id: "a", date: today, isScreenshot: true, isLivePhoto: false), LibraryPhoto(id: "b", date: today, isScreenshot: false, isLivePhoto: false)]
+        let inbox = PhotoInboxBatch(today: today, selectedDay: nil, assets: photos, reviewed: session.reviewed)
+        XCTAssertEqual(inbox.items.map(\.id), ["a"])
+    }
     func testExternalDeletionReconcilesAndUndoNeverRestoresMissingAsset() {
         var session = PhotoReviewSession()
         session.start(["a", "b"]); session.decide("a", delete: true)
@@ -229,6 +250,19 @@ final class PhotoLibraryStoreTests: XCTestCase {
         await store.refresh()
         XCTAssertTrue(store.session.pendingDeletion.isEmpty)
         XCTAssertEqual(store.session.currentID, "b")
+    }
+    func testUnmarkPersistsWithoutDeletingAndDeleteOnlySubmitsRemainingPending() async {
+        let service = FakePhotoLibrary(); let store = PhotoLibraryStore(service: service, defaults: defaults)
+        await store.activate(); store.mark(["a", "b"]); store.unmark("a")
+        XCTAssertEqual(service.deletionRequests, 0)
+        XCTAssertNotNil(store.photoByID["a"])
+        let reopened = PhotoLibraryStore(service: service, defaults: defaults)
+        XCTAssertFalse(reopened.session.reviewed.contains("a"))
+        XCTAssertEqual(reopened.session.pendingDeletion, ["b"])
+        let deleted = await store.deletePending()
+        XCTAssertTrue(deleted)
+        XCTAssertEqual(service.deleted, ["b"])
+        XCTAssertNotNil(store.photoByID["a"])
     }
     func testOperationFailureIsReportedAndUnlocked() async {
         let store = PhotoLibraryStore(service: FakePhotoLibrary(), defaults: defaults)

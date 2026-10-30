@@ -50,7 +50,8 @@ struct PhotoReviewSession: Codable, Equatable {
     }
 
     mutating func unmark(_ id: String) {
-        pendingDeletion.remove(id)
+        guard pendingDeletion.remove(id) != nil else { return }
+        reviewed.remove(id)
         // A later undo must never silently reinstate a cancelled deletion.
         history.removeAll { $0.id == id }
     }

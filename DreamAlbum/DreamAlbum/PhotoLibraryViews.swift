@@ -634,9 +634,28 @@ struct PendingPhotosView: View {
     @EnvironmentObject private var store: DreamStore
     @Environment(\.dismiss) private var dismiss
     @State private var deleteError: String?
+    @State private var unmarkedIDs: [String] = []
+    @State private var preview: LibraryPhoto?
+    private var unmarkedPhotos: [LibraryPhoto] {
+        unmarkedIDs.compactMap { library.photoByID[$0] }.filter { !library.session.pendingDeletion.contains($0.id) }
+    }
     private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
     var body: some View {
         List {
+            if !unmarkedPhotos.isEmpty {
+                Section(c("已取消待删", "Removed from pending")) {
+                    ForEach(unmarkedPhotos) { photo in
+                        HStack(spacing: 14) {
+                            LibraryThumbnail(id: photo.id).frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 6))
+                            Text(photo.date?.formatted(date: .abbreviated, time: .omitted) ?? c("日期未知", "Unknown date"))
+                            Spacer()
+                            Button(c("查看照片", "View photo")) { preview = photo }
+                                .buttonStyle(.borderless).foregroundStyle(theme.accent)
+                                .accessibilityIdentifier("pending.restored.view." + photo.id)
+                        }
+                    }
+                }
+            }
             if library.session.pendingDeletion.count > library.pendingPhotos.count {
                 Section { Text(c("不可访问的照片保留待删状态。", "Inaccessible photos remain pending.")) }
             }
@@ -649,7 +668,10 @@ struct PendingPhotosView: View {
                             if photo.isLivePhoto { Text("Live Photo").font(.caption).foregroundStyle(.secondary) }
                         }
                         Spacer()
-                        Button(c("取消待删", "Unmark")) { library.unmark(photo.id) }.buttonStyle(.borderless)
+                        Button(c("取消待删", "Unmark")) {
+                            library.unmark(photo.id)
+                            unmarkedIDs.removeAll { $0 == photo.id }; unmarkedIDs.insert(photo.id, at: 0)
+                        }.buttonStyle(.borderless)
                     }
                 }
             }
@@ -671,6 +693,7 @@ struct PendingPhotosView: View {
         .alert(c("删除失败", "Deletion failed"), isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
             Button(c("好", "OK")) { deleteError = nil }
         } message: { Text(deleteError ?? "") }
+        .fullScreenCover(item: $preview) { photo in PhotoPreview(photo: photo) }
         .preferredColorScheme(.light)
     }
 }

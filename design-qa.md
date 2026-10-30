@@ -45,3 +45,12 @@ Reference: the user's three phone screenshots show pale pink/black deletion styl
 Actual evidence under .ui-checks/group-actions-v20/: iphone-overview.png and ipad-overview.png (402x874pt / 834x1210pt) and confirmation-overview.png were opened. Images are proportional, fixture content and counts differ from the user's private library. The pending red/white button, 0-photo group single menu item, concise Review label, photo-retention dialog and completed-group confirmation were visually checked. Existing fonts, neutral backgrounds, photos and tab layout stay unchanged; native menus/alerts adapt to iPad. Six distinct UI scenarios per device plus 69 units passed across result bundles, with the async-refresh assertion failure and retry documented in VALIDATION.md.
 
 Build 20 targeted visual result: passed. No claim of full accessibility or physical PhotoKit deletion verification.
+
+
+## Build 21 follow-up: cancelled photo findability
+
+The pending sheet now retains cancelled items during the current presentation under Removed from pending, each with its thumbnail/date and View photo action. The normal pending count and delete batch exclude these items; a zero pending count disables deletion. Original theme surfaces, native list typography and 64pt thumbnails remain.
+
+Actual evidence .ui-checks/unmark-v21/unmarked-overview.png was opened at a proportional phone viewport (402x874pt): the cancelled row, blue viewing action and preview are readable. This is isolated fixture content, not evidence that a particular private asset is present. Phone and iPad both pass the complete new flow after correcting an ambiguous test selector, including relaunch and All Photos visibility. Transient cancelled rows disappear on sheet close; the unreviewed state persists. Older releases did not retain cancelled IDs, so they cannot be retroactively highlighted without guessing.
+
+Build 21 targeted visual result: passed. Full accessibility and real private-library availability were not certified by these tests.

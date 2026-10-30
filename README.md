@@ -175,3 +175,8 @@ Live Photo 使用系统 PHLivePhotoView，长按当前照片播放；松手、�
 ### 2026-10-30 Group deletion and destructive button (build 20)
 
 Pending deletion uses a solid destructive color with explicit white text and spinner. All editable group deletion entries share one Delete album action. Empty groups delete directly; populated groups ask whether to keep photos or also delete originals, with the existing system photo confirmation preserved. Group review buttons always say Review, including reviewed groups; a completed group asks whether to review again before restarting. Cancel keeps its progress; unfinished groups continue directly. No dream storage or backup format changes.
+
+
+### 2026-10-30 Cancelled pending photos stay findable (build 21)
+
+Unmarking a pending photo now also removes its reviewed flag, so it re-enters the unfinished inbox and review flow. Cancellation still makes no PhotoKit mutation; undo cannot silently restore the cancelled deletion. The pending sheet keeps a session-local list of cancelled items with View photo actions, removed if access is lost or they are marked pending again. Session data uses the same storage format. Already-cancelled IDs from old releases cannot be reconstructed after their history was removed; existing reviewed progress is not reset globally. All Photos continues to show accessible images regardless of reviewed status.
