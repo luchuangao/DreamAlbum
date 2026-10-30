@@ -170,3 +170,8 @@ Live Photo 使用系统 PHLivePhotoView，长按当前照片播放；松手、�
 加入梦想画册改为醒目的单一主按钮，一次点击执行副本保存并写入所选画册，全部成功后自动关闭。部分失败保留重试，也可明确加入已保存部分；取消清理未使用副本。已有示例画册导入时移除示例占位路径，保留真实照片和记录；旧版已导入到示例画册的照片在列表优先作为封面显示，计数使用实际照片。
 
 原比例图片轻下拉即可关闭，不再使用弹簧回弹；微小误触或手势取消平滑复位。放大后拖动仍为查看图片，不关闭、不产生整理判断。我的页移除头像相机角标，点击logo仍可从系统相册更换头像，长按恢复默认功能保留。
+
+
+### 2026-10-30 Group deletion and destructive button (build 20)
+
+Pending deletion uses a solid destructive color with explicit white text and spinner. All editable group deletion entries share one Delete album action. Empty groups delete directly; populated groups ask whether to keep photos or also delete originals, with the existing system photo confirmation preserved. Group review buttons always say Review, including reviewed groups; a completed group asks whether to review again before restarting. Cancel keeps its progress; unfinished groups continue directly. No dream storage or backup format changes.

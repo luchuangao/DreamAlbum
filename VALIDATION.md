@@ -286,3 +286,15 @@ The functional revision installed over the existing app on iPhone 15 (device-ins
 ### Build 19 physical-device installation completed
 
 On 2026-10-29 the paired iPhone 15 reconnected. The final signed version 1.1 (19), including the white import-button text, installed successfully over the existing app (device-install-reconnected.json: success). Automatic launch was denied because the phone was locked (device-launch-reconnected.json: failed, Locked). The user can open the installed app after unlocking. This supersedes the earlier final-install blocker, but does not claim successful launch or physical-device interaction tests. No uninstall or data reset.
+
+
+## 2026-10-30 Group actions and reviewed-group confirmation (build 20)
+
+Pending deletion now uses the destructive theme color with explicit white text and loading spinner. Menu, context menu and swipe deletion share one Delete album entry. Empty groups delete directly; populated groups ask whether to keep photos or also delete originals, retaining system PhotoKit confirmation for originals. Reviewed groups keep the Review toolbar label; tapping it shows a completed-group alert. Cancel does not restart; confirming restarts the chosen scope. Unfinished groups continue directly.
+
+- iphone-confirm.xcresult: 69 unit tests and 2 final UI scenarios passed. ipad-confirm.xcresult: the same 2 final scenarios passed (rename/delete keeping photos, reviewed-group alert cancel/restart plus pending button).
+- The initial iphone.xcresult/ipad.xcresult each passed 5 of 6 UI scenarios: empty-group single deletion; originals deletion failure retains group/photos and successful deletion; pending deletion success and cancellation; reviewed-group label/pending button. The keep-photos test initially asserted before the async list refresh. Changed it to wait for the row to disappear; retained initial and intermediate failed results, including an intermediate iPad run of the old immediate assertion. Final rebuilt confirmation runs pass on both. Combined coverage is 6 distinct UI scenarios per device, not the full UI suite.
+- Final build-confirm.log (simulator testing), build-device-confirm.log (signed iOS) and build-mac-confirm.log (Mac Catalyst) succeeded. Version 1.1 (20), all four build numbers updated. git diff --check passed.
+- Actual iphone-overview.png, ipad-overview.png and confirmation-overview.png were opened: red/white deletion button, one empty-group deletion entry, Review label on completed groups, photo retention choice and restart confirmation are visible. Screenshots use isolated fixture images, remain under ignored .ui-checks/group-actions-v20/, and are not committed.
+
+Final build 20, including the restart alert, installed over the existing app and launched successfully on paired iPhone 15 (device-install-confirm.json/device-launch-confirm.json: success). No uninstall, data reset, real user-photo deletion or App Store publication. Physical PhotoKit deletion, permissions and full accessibility need separate device acceptance; simulation is not evidence of those checks. Source and documentation synchronized to GitHub per AGENTS.md.

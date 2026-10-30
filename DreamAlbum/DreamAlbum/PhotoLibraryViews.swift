@@ -136,6 +136,7 @@ struct PhotoBrowserView: View {
     @State private var addPhotos = false
     @State private var showFilters = false
     @State private var filterReviewIDs: [String]?
+    @State private var confirmGroupReview = false
     @Environment(\.libraryScreenActive) private var screenActive
     @Environment(\.dismiss) private var dismiss
 
@@ -192,6 +193,10 @@ struct PhotoBrowserView: View {
         }
         .onChange(of: month) { _, _ in selection = [] }
         .onChange(of: screenshotsOnly) { _, _ in selection = [] }
+        .alert(c("该分组已整理", "This album has been reviewed"), isPresented: $confirmGroupReview) {
+            Button(c("取消", "Cancel"), role: .cancel) { }
+            Button(c("重新整理", "Review again")) { beginReview() }
+        } message: { Text(c("是否重新整理？", "Review it again?")) }
         .fullScreenCover(item: $preview) { photo in PhotoPreview(photo: photo, photos: filtered) }
         .sheet(isPresented: $addPhotos) {
             NavigationStack {
@@ -238,7 +243,10 @@ struct PhotoBrowserView: View {
             } else {
                 Button(selecting ? c("完成", "Done") : c("选择", "Select")) { selecting.toggle(); selection = [] }
                 if !selecting {
-                    Button(allReviewed ? c("重新整理", "Review again") : c("整理", "Review")) { beginReview() }.disabled(filtered.isEmpty)
+                    Button(group == nil && allReviewed ? c("重新整理", "Review again") : c("整理", "Review")) {
+                        if group != nil && allReviewed { confirmGroupReview = true }
+                        else { beginReview() }
+                    }.disabled(filtered.isEmpty)
                 }
                 if group?.canAdd == true {
                     Button { addPhotos = true } label: { Image(systemName: "plus") }.accessibilityLabel(c("添加照片", "Add photos"))
@@ -654,10 +662,10 @@ struct PendingPhotosView: View {
                 Task { if await library.deletePending(onError: { deleteError = $0.localizedDescription }) { dismiss() } }
             } label: {
                 HStack {
-                    if library.isChanging { ProgressView() }
+                    if library.isChanging { ProgressView().tint(.white) }
                     Text(c("删除 \(library.pendingPhotos.count) 张原图", "Delete \(library.pendingPhotos.count) originals"))
-                }.frame(maxWidth: .infinity, minHeight: 48)
-            }.buttonStyle(.bordered).tint(theme.destructive).padding(16).background(AlbumBackground())
+                }.frame(maxWidth: .infinity, minHeight: 48).foregroundStyle(.white)
+            }.buttonStyle(.borderedProminent).tint(theme.destructive).padding(16).background(AlbumBackground())
                 .disabled(library.pendingPhotos.isEmpty || library.isChanging)
         }
         .alert(c("删除失败", "Deletion failed"), isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {

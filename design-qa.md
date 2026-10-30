@@ -36,3 +36,12 @@ Runtime evidence: .ui-checks/import-dismiss-v19/iphone-final-overview.png and ip
 The initial overview exposed inherited black button text. Explicit white text was added and iphone-primary-final.png opened to verify the final appearance and keyboard-visible target. Both devices repeated import/relaunch/avatar checks successfully. Native fonts, existing background and layout, photo colors and symbols remain. Short drag dismissal, zoom protection and horizontal undo passed on both. Tiny accidental drags do not force closure.
 
 Build 19 visual result: passed. This targeted review does not certify full accessibility, every keyboard/orientation or large real-library performance.
+
+
+## Build 20 follow-up: group actions and deletion color
+
+Reference: the user's three phone screenshots show pale pink/black deletion styling, duplicate empty-group deletion choices, and a Review again toolbar label. The pending button now uses theme destructive red with explicit white text/spinner. Empty and populated groups share a single Delete album menu item; only populated groups open the photo-retention choice. Completed groups show Review and ask for restart confirmation after tapping it.
+
+Actual evidence under .ui-checks/group-actions-v20/: iphone-overview.png and ipad-overview.png (402x874pt / 834x1210pt) and confirmation-overview.png were opened. Images are proportional, fixture content and counts differ from the user's private library. The pending red/white button, 0-photo group single menu item, concise Review label, photo-retention dialog and completed-group confirmation were visually checked. Existing fonts, neutral backgrounds, photos and tab layout stay unchanged; native menus/alerts adapt to iPad. Six distinct UI scenarios per device plus 69 units passed across result bundles, with the async-refresh assertion failure and retry documented in VALIDATION.md.
+
+Build 20 targeted visual result: passed. No claim of full accessibility or physical PhotoKit deletion verification.

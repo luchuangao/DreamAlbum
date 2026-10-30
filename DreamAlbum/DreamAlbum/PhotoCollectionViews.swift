@@ -10,6 +10,7 @@ struct PhotoGroupsView: View {
     @State private var title = ""
     @State private var editing: LibraryGroup?
     @State private var infoGroup: LibraryGroup?
+    @State private var deletingGroup: LibraryGroup?
     @AppStorage("dream_album.hide_readonly_groups") private var hideReadOnlyGroups = false
     private var visibleGroups: [LibraryGroup] { library.groups.filter { !hideReadOnlyGroups || $0.isEditable } }
     private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
@@ -74,7 +75,7 @@ struct PhotoGroupsView: View {
                         }
                         .contextMenu { groupActions(group) }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            if group.canDelete { Button(c("仅删分组", "Album only"), role: .destructive) { delete(group) } }
+                            if group.canDelete { Button(c("删除分组", "Delete album"), role: .destructive) { requestDelete(group) } }
                             if group.canRename { Button(c("重命名", "Rename")) { title = group.title; editing = group }.tint(theme.accent) }
                         }
                         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 12))
@@ -122,6 +123,18 @@ struct PhotoGroupsView: View {
                  ? c("可整理其中的照片。相册名称和分类由系统管理。", "You can organize the photos inside. The system manages the album name and category.")
                  : c("可整理其中的照片，此相册暂不支持修改。", "You can organize the photos inside. This album cannot be edited."))
         }
+        .confirmationDialog(c("删除分组后保留照片？", "Keep photos after deleting the album?"),
+                            isPresented: Binding(get: { deletingGroup != nil }, set: { if !$0 { deletingGroup = nil } }),
+                            titleVisibility: .visible) {
+            if let group = deletingGroup {
+                Button(c("保留照片", "Keep photos")) { deletingGroup = nil; delete(group) }
+                Button(c("同时删除 \(group.count) 张原图", "Also delete \(group.count) originals"), role: .destructive) {
+                    deletingGroup = nil
+                    Task { await library.deleteGroupAndPhotos(group.id) }
+                }
+            }
+            Button(c("取消", "Cancel"), role: .cancel) { deletingGroup = nil }
+        }
         .libraryErrorAlert()
     }
     private func groupBackground(_ group: LibraryGroup) -> some View {
@@ -137,11 +150,13 @@ struct PhotoGroupsView: View {
     private func groupActions(_ group: LibraryGroup) -> some View {
         if group.canRename { Button(c("重命名", "Rename"), systemImage: "pencil") { title = group.title; editing = group } }
         if group.canDelete {
-            Button(c("删除分组（保留照片）", "Delete album (keep photos)"), systemImage: "folder.badge.minus", role: .destructive) { delete(group) }
-            Button(c("删除分组及 \(group.count) 张原图", "Delete album and \(group.count) originals"), systemImage: "trash", role: .destructive) {
-                Task { await library.deleteGroupAndPhotos(group.id) }
-            }
+            Button(c("删除分组", "Delete album"), systemImage: "trash", role: .destructive) { requestDelete(group) }
         }
+    }
+    private func requestDelete(_ group: LibraryGroup) {
+        let current = library.groups.first { $0.id == group.id } ?? group
+        if current.count == 0 { delete(current) }
+        else { deletingGroup = current }
     }
     private func delete(_ group: LibraryGroup) {
         Task { await library.perform { try await library.service.deleteGroup(id: group.id) } }
