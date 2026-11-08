@@ -20,6 +20,8 @@
 	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>用于浏览和整理手机照片、管理系统相册，并将精选图片保存为梦想画册。</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>用于将制作的拼图保存到照片。</string>
 	<key>NSCameraUsageDescription</key>
 	<string>用于直接拍摄梦想相册和成长记录的画面。</string>
 	<key>UIAppFonts</key>

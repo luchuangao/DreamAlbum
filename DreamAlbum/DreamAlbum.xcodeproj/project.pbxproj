@@ -39,6 +39,13 @@
 		CEF08900D9AE9C0140B71C59 /* PhotoFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3117F281C37CD3C3C6DE9FC0 /* PhotoFlowTests.swift */; };
 		DCEFDD9F81DC677CC745E3CC /* NativePhotoZoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E73B41F37CB35507829EA5 /* NativePhotoZoom.swift */; };
 		E9C1D9532E7B2570C9E944ED /* DailyInboxFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E652CE18F26FB5CA15AA3D3 /* DailyInboxFixture.swift */; };
+		3F15421AF7FE800A899E1BF5 /* CollageDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA4901B792B111CFE8325EA3 /* CollageDocument.swift */; };
+		2958C7BB50C071006FDB5990 /* CollageRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E91D91F24D9C7D7F94B3A2F9 /* CollageRenderer.swift */; };
+		075A7FC267FBED372C2E23FD /* CollageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8461EB58D604F63DCFD3302 /* CollageStore.swift */; };
+		8CEA1D619E773D9AACE7EFEA /* CollageViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BD4E765F76C7E19307D9B2 /* CollageViews.swift */; };
+		0E42ABD1FD0D21CDE8896674 /* CollageEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E463A9C8ABD2CCDEB9156E50 /* CollageEditor.swift */; };
+		18A12AC5834A8BBD322AD683 /* CollageExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17A7B72B1ED5CACBA6BEEFED /* CollageExport.swift */; };
+		0D5D5259CD22B34DF1378753 /* CollageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D73446817C5459CF549C61 /* CollageTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -117,6 +124,13 @@
 		B472E0D5E56C8830D98BE4E8 /* DailyPhotoInboxView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DailyPhotoInboxView.swift; sourceTree = "<group>"; };
 		D0D1C592D9687CD9BA7D3138 /* PhotoLibraryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhotoLibraryTests.swift; sourceTree = "<group>"; };
 		D8E73B41F37CB35507829EA5 /* NativePhotoZoom.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NativePhotoZoom.swift; sourceTree = "<group>"; };
+		BA4901B792B111CFE8325EA3 /* CollageDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollageDocument.swift; sourceTree = "<group>"; };
+		E91D91F24D9C7D7F94B3A2F9 /* CollageRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollageRenderer.swift; sourceTree = "<group>"; };
+		D8461EB58D604F63DCFD3302 /* CollageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollageStore.swift; sourceTree = "<group>"; };
+		E2BD4E765F76C7E19307D9B2 /* CollageViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollageViews.swift; sourceTree = "<group>"; };
+		E463A9C8ABD2CCDEB9156E50 /* CollageEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollageEditor.swift; sourceTree = "<group>"; };
+		17A7B72B1ED5CACBA6BEEFED /* CollageExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollageExport.swift; sourceTree = "<group>"; };
+		C5D73446817C5459CF549C61 /* CollageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollageTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -173,6 +187,12 @@
 				ABCDEF100000000000000004 /* PhotoLibraryViews.swift */,
 				ABCDEF100000000000000003 /* PhotoLibraryStore.swift */,
 				ABCDEF100000000000000002 /* PhotoLibraryService.swift */,
+				BA4901B792B111CFE8325EA3 /* CollageDocument.swift */,
+				E91D91F24D9C7D7F94B3A2F9 /* CollageRenderer.swift */,
+				D8461EB58D604F63DCFD3302 /* CollageStore.swift */,
+				E2BD4E765F76C7E19307D9B2 /* CollageViews.swift */,
+				E463A9C8ABD2CCDEB9156E50 /* CollageEditor.swift */,
+				17A7B72B1ED5CACBA6BEEFED /* CollageExport.swift */,
 				ABCDEF100000000000000001 /* PhotoReviewSession.swift */,
 				111111111111111111111002 /* RootView.swift */,
 				111111111111111111111003 /* Models.swift */,
@@ -248,6 +268,7 @@
 		BC027BC38D3B80F65C303E28 /* DreamAlbumTests */ = {
 			isa = PBXGroup;
 			children = (
+				C5D73446817C5459CF549C61 /* CollageTests.swift */,
 				D0D1C592D9687CD9BA7D3138 /* PhotoLibraryTests.swift */,
 			);
 			name = DreamAlbumTests;
@@ -413,6 +434,12 @@
 				ABCDEF200000000000000004 /* PhotoLibraryViews.swift in Sources */,
 				ABCDEF200000000000000003 /* PhotoLibraryStore.swift in Sources */,
 				ABCDEF200000000000000002 /* PhotoLibraryService.swift in Sources */,
+				3F15421AF7FE800A899E1BF5 /* CollageDocument.swift in Sources */,
+				2958C7BB50C071006FDB5990 /* CollageRenderer.swift in Sources */,
+				075A7FC267FBED372C2E23FD /* CollageStore.swift in Sources */,
+				8CEA1D619E773D9AACE7EFEA /* CollageViews.swift in Sources */,
+				0E42ABD1FD0D21CDE8896674 /* CollageEditor.swift in Sources */,
+				18A12AC5834A8BBD322AD683 /* CollageExport.swift in Sources */,
 				ABCDEF200000000000000001 /* PhotoReviewSession.swift in Sources */,
 				111111111111111111111102 /* RootView.swift in Sources */,
 				111111111111111111111103 /* Models.swift in Sources */,
@@ -454,6 +481,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D5D5259CD22B34DF1378753 /* CollageTests.swift in Sources */,
 				0B0A5EB92192593D459DC3BC /* PhotoLibraryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -609,7 +637,7 @@
 				"CODE_SIGNING_ALLOWED[sdk=macosx*]" = NO;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbum/DreamAlbum.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_ASSET_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DreamAlbum/Info.plist;
@@ -638,7 +666,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbum/DreamAlbum.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_ASSET_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DreamAlbum/Info.plist;
@@ -731,7 +759,7 @@
 				"CODE_SIGNING_ALLOWED[sdk=macosx*]" = NO;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbumWidget/DreamAlbumWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = VFDQL6Z55P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = DreamAlbumWidget/Info.plist;
@@ -760,7 +788,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbumWidget/DreamAlbumWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = VFDQL6Z55P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = DreamAlbumWidget/Info.plist;

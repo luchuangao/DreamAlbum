@@ -137,6 +137,7 @@ struct PhotoBrowserView: View {
     @State private var showFilters = false
     @State private var filterReviewIDs: [String]?
     @State private var confirmGroupReview = false
+    @State private var showCollage = false
     @Environment(\.libraryScreenActive) private var screenActive
     @Environment(\.dismiss) private var dismiss
 
@@ -214,6 +215,7 @@ struct PhotoBrowserView: View {
         }) { filterSheet }
         .sheet(isPresented: $showPending) { NavigationStack { PendingPhotosView() } }
         .fullScreenCover(isPresented: $showReview) { NavigationStack { PhotoReviewView() } }
+        .fullScreenCover(isPresented: $showCollage) { if let group { NewCollageView(groupID: group.id, preselected: selecting ? orderedSelection : []) } }
         .fullScreenCover(item: $destination) { destination in
             NavigationStack {
                 switch destination {
@@ -336,6 +338,10 @@ struct PhotoBrowserView: View {
                 Text(c("\(filtered.count) 张", "\(filtered.count) photos"))
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer(minLength: 8)
+                if group != nil && onPick == nil && !selecting {
+                    Button(c("制作拼图", "Create collage"), systemImage: "square.grid.2x2") { showCollage = true }
+                        .font(.subheadline).frame(minHeight: 44).disabled(source.isEmpty).accessibilityIdentifier("library.collage")
+                }
                 if selecting || onPick != nil {
                     Button(selection.count == filtered.count ? c("取消全选", "Deselect all") : c("全选", "Select all")) {
                         selection = selection.count == filtered.count ? [] : Set(filtered.map(\.id))
@@ -350,7 +356,7 @@ struct PhotoBrowserView: View {
         }
     }
     private var selectionToolbar: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 8) {
             if group?.canRemove == true {
                 Menu {
                     Button(c("加入分组", "Add to album"), systemImage: "folder.badge.plus") { destination = .groups }
@@ -362,13 +368,17 @@ struct PhotoBrowserView: View {
                     .disabled(selection.isEmpty).accessibilityIdentifier("library.action.groups")
             }
             Spacer(minLength: 0)
-            Button { destination = .dreams } label: { Label(c("画册", "Dream album"), systemImage: "book") }.accessibilityIdentifier("library.action.dreams").disabled(selection.isEmpty)
+            if group != nil {
+                Button { showCollage = true } label: { Label(c("拼图", "Collage"), systemImage: "square.grid.2x2") }.disabled(selection.isEmpty).accessibilityIdentifier("library.action.collage")
+                Spacer(minLength: 0)
+            }
+            Button { destination = .dreams } label: { Label(c("画册", "Album"), systemImage: "book") }.accessibilityIdentifier("library.action.dreams").disabled(selection.isEmpty)
             Spacer(minLength: 0)
             Button { library.mark(orderedSelection); selection = [] } label: {
                 Label(c("待删", "Pending"), systemImage: "tray")
             }.accessibilityIdentifier("library.action.pending").disabled(selection.isEmpty)
         }
-        .font(.subheadline).padding(20).frame(minHeight: 56)
+        .font(group == nil ? .subheadline : .caption).lineLimit(1).padding(.horizontal, 12).padding(.vertical, 16).frame(minHeight: 56)
         .background(theme.utilityBackground).disabled(library.isChanging)
     }
     private func removeSelectionFromGroup() {

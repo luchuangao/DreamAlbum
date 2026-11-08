@@ -934,6 +934,129 @@ final class PhotoFlowTests: XCTestCase {
         markFixturePhoto()
         capture("pending-destructive-button")
     }
+    private func launchCollageFixture(english: Bool = false, failSave: Bool = false) {
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", english ? "(en)" : "(zh-Hans)", "-AppleLocale", english ? "en_US" : "zh_CN", "-dream_album.app_language", english ? "english" : "chinese", "-dailyInboxFixture", "-resetDailyFixture", "-resetCollageFixture"]
+        if failSave { app.launchArguments.append("-failCollageSave") }
+        app.launch(); visibleButton("tab.groups").tap()
+    }
+    private func createCollage(_ kind: String, count: Int = 2) {
+        visibleButton("library.collage").tap()
+        visibleButton("collage.kind."+kind).tap()
+        let photos = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "collage.photo.")).allElementsBoundByIndex.filter { $0.isHittable }
+        XCTAssertGreaterThanOrEqual(photos.count, count)
+        for photo in photos.prefix(count) { photo.tap() }
+        visibleButton("collage.photos.confirm").tap()
+        waitEnabled(app.buttons["collage.export"])
+    }
+    private func openCollageDrafts() {
+        visibleButton("tab.me").tap()
+        let entry = app.buttons["management.collages"]
+        for _ in 0..<4 { if entry.isHittable { break }; app.swipeUp() }
+        visibleButton("management.collages").tap()
+    }
+    func testCollageFiveKindsAndDraftsPersistAcrossRelaunch() {
+        launchCollageFixture()
+        app.staticTexts["测试分组"].tap()
+        for kind in ["grid", "strip", "comparison", "poster", "freeform"] {
+            createCollage(kind)
+            XCTAssertTrue(app.otherElements["collage.canvas"].exists || app.scrollViews["collage.canvas"].exists)
+            capture("collage-editor-"+kind)
+            visibleButton("collage.editor.done").tap()
+            XCTAssertTrue(app.buttons["library.collage"].waitForExistence(timeout: 8))
+        }
+        app.terminate(); app.launchArguments.removeAll { ["-resetDailyFixture", "-resetCollageFixture"].contains($0) }; app.launch()
+        openCollageDrafts()
+        XCTAssertEqual(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "collage.draft.")).count, 5)
+        capture("collage-draft-list")
+        let first = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "collage.draft.")).firstMatch
+        first.tap(); waitEnabled(app.buttons["collage.export"])
+        capture("collage-reopened")
+    }
+    func testCollageGroupMenuPreselectionAndEmptyGroupDisabled() {
+        app.terminate()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN", "-dream_album.app_language", "chinese", "-dailyInboxFixture", "-resetDailyFixture", "-silverLayoutFixture", "-resetCollageFixture"]
+        app.launch(); visibleButton("tab.groups").tap()
+        visibleButton("group.actions.third").tap()
+        XCTAssertFalse(app.buttons["group.collage.third"].isEnabled)
+        app.tap()
+        app.staticTexts["微信"].tap()
+        visibleButton("选择").tap(); visiblePhoto().tap()
+        visibleButton("library.action.collage").tap()
+        capture("collage-preselection-types")
+        visibleButton("collage.kind.grid").tap()
+        XCTAssertTrue(app.staticTexts["collage.photo.count"].label.contains("1"))
+        XCTAssertFalse(app.buttons["collage.photos.confirm"].isEnabled)
+        let unselected = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND value == %@", "collage.photo.", "0")).firstMatch
+        unselected.tap(); visibleButton("collage.photos.confirm").tap(); waitEnabled(app.buttons["collage.export"])
+        capture("collage-preselection-editor")
+    }
+    func testCollageExportSaveAlbumShareAndDraftManagement() {
+        launchCollageFixture()
+        app.staticTexts["测试分组"].tap(); createCollage("grid")
+        visibleButton("collage.export").tap(); visibleButton("collage.export.generate").tap()
+        waitEnabled(app.buttons["collage.export.photos"])
+        capture("collage-export-actions")
+        visibleButton("collage.export.photos").tap()
+        XCTAssertTrue(app.staticTexts["已保存到照片"].waitForExistence(timeout: 8))
+        visibleButton("collage.export.album").tap()
+        let title = app.textFields["画册名称"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5)); title.tap(); title.typeText("拼图作品")
+        visibleButton("加入梦想画册").tap()
+        XCTAssertTrue(app.staticTexts["已加入画册"].waitForExistence(timeout: 8))
+        visibleButton("collage.export.share").tap()
+        // Wait for the remote activity controller instead of querying before its animation.
+        let shareClose = app.buttons.matching(NSPredicate(format: "label IN %@", ["关闭", "Close", "取消", "Cancel"])).firstMatch
+        XCTAssertTrue(shareClose.waitForExistence(timeout: 10))
+        capture("collage-share-sheet")
+        shareClose.tap()
+        visibleButton("完成").tap(); visibleButton("collage.editor.done").tap()
+        visibleButton("tab.dreams").tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "拼图作品")).firstMatch.waitForExistence(timeout: 5))
+        openCollageDrafts()
+        var drafts = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "collage.draft."))
+        drafts.firstMatch.press(forDuration: 1); visibleButton("复制").tap()
+        XCTAssertEqual(drafts.count, 2)
+        drafts.firstMatch.press(forDuration: 1); visibleButton("重命名").tap()
+        let alert = app.alerts["重命名"]
+        alert.textFields.firstMatch.tap(); alert.textFields.firstMatch.typeText("2"); alert.buttons["保存"].tap()
+        drafts = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "collage.draft."))
+        drafts.firstMatch.press(forDuration: 1); visibleButton("删除草稿").tap()
+        XCTAssertEqual(drafts.count, 1)
+        capture("collage-managed-draft")
+    }
+    func testCollageEnglishAndExportFailurePreservesDraft() {
+        launchCollageFixture(english: true, failSave: true)
+        app.staticTexts["测试分组"].tap(); createCollage("poster", count: 1)
+        capture("collage-english-editor")
+        visibleButton("collage.export").tap(); visibleButton("collage.export.generate").tap()
+        waitEnabled(app.buttons["collage.export.photos"])
+        visibleButton("collage.export.photos").tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Allow saving photos")).firstMatch.waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["collage.export.photos"].isEnabled)
+        capture("collage-export-permission-failure")
+        visibleButton("Done").tap(); visibleButton("collage.editor.done").tap()
+        openCollageDrafts()
+        XCTAssertEqual(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "collage.draft.")).count, 1)
+    }
+    func testCollageCanvasDragUndoAndLockedReplacement() {
+        launchCollageFixture()
+        app.staticTexts["测试分组"].tap(); createCollage("freeform")
+        let photo = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "collage.layer.")).firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 8))
+        let start = photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 22, dy: 35)))
+        waitEnabled(app.buttons["collage.undo"])
+        visibleButton("collage.undo").tap(); waitEnabled(app.buttons["collage.redo"])
+        visibleButton("collage.redo").tap()
+        photo.tap(); visibleButton("图层").tap()
+        let lock = app.buttons["锁定或解锁"].firstMatch
+        XCTAssertTrue(lock.waitForExistence(timeout: 5)); lock.tap()
+        visibleButton("完成").tap()
+        photo.tap()
+        XCTAssertFalse(app.buttons["替换"].firstMatch.isEnabled)
+        capture("collage-locked-photo")
+    }
     func testUnmarkedPhotoCanBeViewedAndReturnsToInboxAfterRelaunch() {
         launchDailyFixture()
         visibleButton("today.continue").tap()

@@ -82,6 +82,9 @@ final class DailyInboxFixture: PhotoLibraryService {
             }
         }
     }
+    func saveGeneratedImages(_ urls: [URL]) async throws {
+        if ProcessInfo.processInfo.arguments.contains("-failCollageSave") { throw PhotoLibraryFailure.saveDenied }
+    }
     func requestAccess() async -> PHAuthorizationStatus { authorization }
     func snapshot() async -> LibrarySnapshot {
         let groupIDs = ProcessInfo.processInfo.arguments.contains("-silverLayoutFixture") ? ["editable", "second", "third"] : ["editable", "readonly"]

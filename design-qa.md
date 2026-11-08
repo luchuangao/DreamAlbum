@@ -54,3 +54,11 @@ The pending sheet now retains cancelled items during the current presentation un
 Actual evidence .ui-checks/unmark-v21/unmarked-overview.png was opened at a proportional phone viewport (402x874pt): the cancelled row, blue viewing action and preview are readable. This is isolated fixture content, not evidence that a particular private asset is present. Phone and iPad both pass the complete new flow after correcting an ambiguous test selector, including relaunch and All Photos visibility. Transient cancelled rows disappear on sheet close; the unreviewed state persists. Older releases did not retain cancelled IDs, so they cannot be retroactively highlighted without guessing.
 
 Build 21 targeted visual result: passed. Full accessibility and real private-library availability were not certified by these tests.
+
+## Build 22 — collage editor
+
+Actual iPhone and iPad simulator captures for grid, strip, comparison, poster, and freeform were compared at their portrait aspect ratios. The phone keeps the canvas above the tool row; the iPad adds a persistent inspector. The vertical strip scrolls past the viewport while the export geometry retains the source aspect ratio. The comparison labels and poster header are rendered on the canvas itself. Draft thumbnails, names and dates were checked after relaunch, and tapping the complete draft row now opens the editor on iPad.
+
+Local evidence: .ui-checks/collage-v22/five-overview.png and ipad-overview.png. The captures use generated fixture images.
+
+The final canvas gesture scenario passed on iPhone and iPad. Native touch targets match each photo's frame; dragging, undoing, redoing, and locking were verified through the running UI. Test builds and screenshots use synthetic photos.

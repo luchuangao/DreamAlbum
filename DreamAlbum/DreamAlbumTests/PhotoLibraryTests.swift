@@ -11,6 +11,9 @@ final class FakePhotoLibrary: PhotoLibraryService {
     var authorizationAfterSnapshot: PHAuthorizationStatus?
     var state = LibrarySnapshot(photos: [LibraryPhoto(id: "a", date: Date(), isScreenshot: false, isLivePhoto: true), LibraryPhoto(id: "b", date: nil, isScreenshot: true, isLivePhoto: false)], groups: [])
     var deletedGroups: [String] = []
+    var savedGenerated: [URL] = []
+    var generatedSaveError: Error?
+    func saveGeneratedImages(_ urls: [URL]) async throws { if let generatedSaveError { throw generatedSaveError }; savedGenerated += urls }
     var deletionRequests = 0
     var deletionError: Error?
     var deletionFails = false

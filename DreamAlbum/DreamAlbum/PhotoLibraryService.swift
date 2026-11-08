@@ -1,3 +1,4 @@
+import ImageIO
 import Photos
 import UIKit
 
@@ -26,9 +27,10 @@ struct LibrarySnapshot: Sendable {
 }
 
 enum PhotoLibraryFailure: LocalizedError {
-    case unavailable, notEditable, imageUnavailable
+    case unavailable, notEditable, imageUnavailable, saveDenied
     var errorDescription: String? {
         switch self {
+        case .saveDenied: return "未允许保存照片，请在设置中开启。 / Allow saving photos in Settings."
         case .unavailable: return "照片不可访问或已被移除。 / Photo is unavailable."
         case .notEditable: return "此相册不支持这项修改。 / This album cannot be edited."
         case .imageUnavailable: return "图片加载失败，请检查网络后重试。 / Could not load image. Please retry."
@@ -54,6 +56,7 @@ protocol PhotoLibraryService: AnyObject {
     func addPhotos(_ ids: [String], to groupID: String) async throws
     func removePhotos(_ ids: [String], from groupID: String) async throws
     func deletePhotos(_ ids: [String]) async throws
+    func saveGeneratedImages(_ urls: [URL]) async throws
 }
 
 // Services without motion resources keep the independently loaded image usable.
@@ -240,6 +243,17 @@ final class SystemPhotoLibraryService: NSObject, PhotoLibraryService, PHPhotoLib
                 })
             }
         } onCancel: { request.cancel() }
+    }
+    func saveGeneratedImages(_ urls: [URL]) async throws {
+        guard !urls.isEmpty, urls.allSatisfy({ $0.isFileURL && CGImageSourceCreateWithURL($0 as CFURL, nil) != nil }) else { throw PhotoLibraryFailure.imageUnavailable }
+        try Task.checkCancellation()
+        var status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+        if status == .notDetermined { status = await PHPhotoLibrary.requestAuthorization(for: .addOnly) }
+        guard status == .authorized || status == .limited else { throw PhotoLibraryFailure.saveDenied }
+        try Task.checkCancellation()
+        try await change {
+            for url in urls { PHAssetCreationRequest.forAsset().addResource(with: .photo, fileURL: url, options: nil) }
+        }
     }
     private func change(_ block: @escaping () -> Void) async throws {
         try await PHPhotoLibrary.shared().performChanges(block)

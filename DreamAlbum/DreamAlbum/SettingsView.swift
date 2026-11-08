@@ -7,6 +7,7 @@ struct SettingsView: View {
     @AppStorage(AppTheme.storageKey) private var themeID = AppTheme.silver.rawValue
     @AppStorage("dream_album.hide_readonly_groups") private var hideReadOnlyGroups = false
     @EnvironmentObject private var store: DreamStore
+    @EnvironmentObject private var collages: CollageStore
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var reminder: PhotoSortingReminder
     @State private var showingPending = false
@@ -48,6 +49,8 @@ struct SettingsView: View {
                         managementLink("archivebox", c("归档画册", "Archived albums"), "\(store.archivedDreams.count)") {
                             ArchivedDreamAlbumsView()
                         }.accessibilityIdentifier("management.archived")
+                        rowDivider
+                        managementLink("square.grid.2x2", c("我的拼图", "My collages"), "\(collages.documents.count)") { CollageDraftsView() }.accessibilityIdentifier("management.collages")
                         rowDivider
                         managementLink("slider.horizontal.3", c("画册设置", "Album settings")) {
                             AlbumPreferencesView()

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct RootView: View {
+    @StateObject private var collages = CollageStore()
     @EnvironmentObject private var store: DreamStore
     @EnvironmentObject private var purchaseStore: PurchaseStore
     @EnvironmentObject private var library: PhotoLibraryStore
@@ -10,6 +11,7 @@ struct RootView: View {
     private var theme: AppTheme { AppTheme.resolve(themeID) }
     var body: some View {
         MainTabView()
+            .environmentObject(collages)
             .tint(theme.accent)
             .foregroundStyle(theme.primary)
             .preferredColorScheme(.light)

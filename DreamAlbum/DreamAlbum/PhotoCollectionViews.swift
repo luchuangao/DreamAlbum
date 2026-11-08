@@ -11,6 +11,7 @@ struct PhotoGroupsView: View {
     @State private var editing: LibraryGroup?
     @State private var infoGroup: LibraryGroup?
     @State private var deletingGroup: LibraryGroup?
+    @State private var collageGroup: LibraryGroup?
     @AppStorage("dream_album.hide_readonly_groups") private var hideReadOnlyGroups = false
     private var visibleGroups: [LibraryGroup] { library.groups.filter { !hideReadOnlyGroups || $0.isEditable } }
     private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
@@ -135,6 +136,7 @@ struct PhotoGroupsView: View {
             }
             Button(c("取消", "Cancel"), role: .cancel) { deletingGroup = nil }
         }
+        .fullScreenCover(item: $collageGroup) { group in NewCollageView(groupID: group.id) }
         .libraryErrorAlert()
     }
     private func groupBackground(_ group: LibraryGroup) -> some View {
@@ -148,6 +150,8 @@ struct PhotoGroupsView: View {
     }
     @ViewBuilder
     private func groupActions(_ group: LibraryGroup) -> some View {
+        Button(c("制作拼图", "Create collage"), systemImage: "square.grid.2x2") { collageGroup = group }
+            .disabled(group.count == 0).accessibilityIdentifier("group.collage."+group.id)
         if group.canRename { Button(c("重命名", "Rename"), systemImage: "pencil") { title = group.title; editing = group } }
         if group.canDelete {
             Button(c("删除分组", "Delete album"), systemImage: "trash", role: .destructive) { requestDelete(group) }
