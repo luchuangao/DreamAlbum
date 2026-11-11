@@ -109,6 +109,59 @@ private func collageFootprint() -> UInt64 {
 }
 
 final class CollageGeometryTests: XCTestCase {
+    func testGridCatalogFillsCanvasForEveryCountRatioAndTemplate() {
+        for count in 2...9 {
+            for template in CollageGridTemplate.available(for: count) {
+                for ratio in CollageRatio.allCases {
+                    for gap in [0.0, 0.015, 0.06] {
+                        var doc = CollageDocument(name: "Grid", kind: .grid)
+                        doc.gridTemplateID = template.rawValue; doc.ratio = ratio; doc.spacing = gap; doc.margin = 0
+                        doc.layers = (0..<count).map { CollageLayer(file: "assets/\($0)") }
+                        let geometry = CollageGeometry.make(doc)
+                        let bounds = CGRect(origin: .zero, size: geometry.size)
+                        XCTAssertEqual(geometry.placements.map(\.id), doc.layers.map(\.id))
+                        var area = 0.0
+                        for (index, p) in geometry.placements.enumerated() {
+                            XCTAssertGreaterThan(p.rect.width, 0); XCTAssertGreaterThan(p.rect.height, 0)
+                            XCTAssertTrue(bounds.insetBy(dx: -0.001, dy: -0.001).contains(p.rect))
+                            area += p.rect.width*p.rect.height
+                            for other in geometry.placements.dropFirst(index+1) {
+                                let intersection = p.rect.intersection(other.rect)
+                                XCTAssertTrue(intersection.isNull || intersection.width*intersection.height < 0.001)
+                            }
+                        }
+                        if gap == 0 { XCTAssertEqual(area, bounds.width*bounds.height, accuracy: 0.001, "\(count) \(template) \(ratio)") }
+                    }
+                }
+            }
+        }
+    }
+    func testBuild22GridDecodesWithoutNewFieldsAndKeepsGeometry() throws {
+        var doc = CollageDocument(name: "Old", kind: .grid)
+        doc.layout = 2; doc.layers = (0..<5).map { CollageLayer(file: "assets/\($0)", zoom: 2, offsetX: 0.3) }
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(doc)) as? [String: Any])
+        json.removeValue(forKey: "gridTemplateID")
+        json["layers"] = (json["layers"] as! [[String: Any]]).map { layer in var old = layer; old.removeValue(forKey: "photoFit"); return old }
+        let restored = try JSONDecoder().decode(CollageDocument.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertNil(restored.gridTemplateID); XCTAssertTrue(restored.layers.allSatisfy { $0.photoFit == nil })
+        XCTAssertEqual(CollageGeometry.make(restored).placements.map(\.rect), CollageGeometry.make(doc).placements.map(\.rect))
+        XCTAssertEqual(restored.layers, doc.layers)
+    }
+    func testGridCropFillFitAndClampedPan() {
+        let box = CGRect(x: 0, y: 0, width: 200, height: 300)
+        let photo = CollageLayer(file: "assets/photo", pixelWidth: 1600, pixelHeight: 900)
+        var crop = CollageGridCrop(layer: photo, aspect: box.width/box.height)
+        crop.transform(from: photo, translation: CGSize(width: 10000, height: -10000), scale: 9, box: box.size)
+        XCTAssertEqual(crop.layer.zoom, 5)
+        let filled = CollageGeometry.imageRect(crop.layer, in: box)
+        XCTAssertTrue(filled.insetBy(dx: -0.001, dy: -0.001).contains(box))
+        crop.reset(); crop.layer.photoFit = .fit
+        crop.transform(from: photo, translation: CGSize(width: 200, height: 200), scale: 3, box: box.size)
+        XCTAssertEqual(crop.layer.zoom, 1)
+        let fitted = CollageGeometry.imageRect(crop.layer, in: box)
+        XCTAssertTrue(box.contains(fitted)); XCTAssertEqual(fitted.width/fitted.height, 1600.0/900, accuracy: 0.001)
+        crop.reset(); XCTAssertEqual(crop.layer.offsetX, 0); XCTAssertEqual(crop.layer.photoFit, .fill)
+    }
     func testFiveKindsCountBoundariesAndRoundTripPreserveEditing() throws {
         for kind in CollageKind.allCases {
             var doc = CollageDocument(name: "拼图", kind: kind, sourceGroupID: "local-only")
@@ -169,6 +222,58 @@ final class CollageGeometryTests: XCTestCase {
 }
 
 final class CollageRenderingTests: XCTestCase {
+    func testGridFitPreviewMatchesJPEGAndPNGWithoutCroppingContent() async throws {
+        let root = try testCollageRoot(); defer { try? FileManager.default.removeItem(at: root) }
+        var doc = CollageDocument(name: "Fit", kind: .grid)
+        doc.setKind(.grid); doc.margin = 0; doc.spacing = 0; doc.corner = 0
+        var wide = try testPhoto(root, size: CGSize(width: 800, height: 400), color: .red)
+        wide.photoFit = .fit
+        doc.layers = [wide, try testPhoto(root, size: CGSize(width: 800, height: 400), color: .blue, orientation: 6)]
+        let geometry = CollageGeometry.make(doc)
+        let page = CGRect(origin: .zero, size: geometry.size)
+        let preview = try CollageRenderer.render(doc, root: root, geometry: geometry, page: page, outputScale: 0.25)
+        func sample(_ image: UIImage, x: CGFloat, y: CGFloat) throws -> (UInt8, UInt8, UInt8) {
+            let bitmap = try XCTUnwrap(image.cgImage)
+            let pixel = try XCTUnwrap(bitmap.cropping(to: CGRect(x: CGFloat(bitmap.width)*x, y: CGFloat(bitmap.height)*y, width: 1, height: 1)))
+            return centerColor(UIImage(cgImage: pixel))
+        }
+        for format in CollageFileFormat.allCases {
+            let urls = try await CollageRenderer.export(doc, root: root, longEdge: 2048, fileFormat: format) { _ in }
+            defer { CollageRenderer.cleanExport(urls) }
+            let url = try XCTUnwrap(urls.first)
+            XCTAssertEqual(try imageDimensions(url), CGSize(width: 2048, height: 2048))
+            let output = try XCTUnwrap(UIImage(contentsOfFile: url.path))
+            for image in [preview, output] {
+                let margin = try sample(image, x: 0.25, y: 0.05)
+                XCTAssertGreaterThan(margin.0, 245); XCTAssertGreaterThan(margin.1, 245); XCTAssertGreaterThan(margin.2, 245)
+                let red = try sample(image, x: 0.25, y: 0.5)
+                XCTAssertGreaterThan(red.0, 240); XCTAssertLessThan(red.1, 15)
+                let blue = try sample(image, x: 0.75, y: 0.5)
+                XCTAssertGreaterThan(blue.2, 240); XCTAssertLessThan(blue.0, 15)
+            }
+        }
+    }
+    func testNineLargeGridSourcesExportAt4096WithinMemoryBudget() async throws {
+        let root = try testCollageRoot(); defer { try? FileManager.default.removeItem(at: root) }
+        var doc = CollageDocument(name: "Nine", kind: .grid); doc.setKind(.grid)
+        for index in 0..<9 {
+            doc.layers.append(try autoreleasepool { try testPhoto(root, size: CGSize(width: 4000, height: 3000), color: index.isMultiple(of: 2) ? .red : .blue) })
+        }
+        let baseline = collageFootprint()
+        let watcher = Task.detached { () -> UInt64 in
+            var peak = baseline
+            while !Task.isCancelled { peak = max(peak, collageFootprint()); try? await Task.sleep(for: .milliseconds(10)) }
+            return peak
+        }
+        let files = try await CollageRenderer.export(doc, root: root, longEdge: 4096, fileFormat: .png) { _ in }
+        defer { CollageRenderer.cleanExport(files) }
+        watcher.cancel(); let peak = await watcher.value
+        XCTAssertEqual(try imageDimensions(XCTUnwrap(files.first)), CGSize(width: 4096, height: 4096))
+        XCTAssertLessThan(peak-baseline, 384*1024*1024)
+        let report = "grid sources=9; each=4000x3000; output=4096; baseline=\(baseline); peak=\(peak); delta=\(peak-baseline)"
+        let attachment = XCTAttachment(string: report); attachment.name = "grid-memory"; attachment.lifetime = .keepAlways; add(attachment)
+        print(report)
+    }
     func testOrientationMetadataAndDecodeAreUpright() throws {
         let root = try testCollageRoot(); defer { try? FileManager.default.removeItem(at: root) }
         let layer = try testPhoto(root, size: CGSize(width: 40, height: 80), orientation: 6)
@@ -254,6 +359,41 @@ final class CollageRenderingTests: XCTestCase {
 }
 
 @MainActor final class CollagePersistenceTests: XCTestCase {
+    func testGridCropIsLocalUntilCommitAndCreatesOneUndoStep() throws {
+        let root = try testCollageRoot(); defer { try? FileManager.default.removeItem(at: root) }
+        let store = CollageStore(root: root)
+        var doc = CollageDocument(name: "Grid", kind: .grid)
+        doc.layers = [try testPhoto(store.directory(doc.id)), try testPhoto(store.directory(doc.id), color: .blue)]
+        try store.save(doc)
+        let model = CollageEditorModel(document: doc, store: store)
+        var crop = CollageGridCrop(layer: doc.layers[0], aspect: 0.5)
+        crop.transform(from: crop.layer, translation: CGSize(width: 20, height: 5), scale: 2, box: CGSize(width: 100, height: 200))
+        XCTAssertEqual(model.document, doc); XCTAssertEqual(model.undoItems.count, 0)
+        model.commitGridCrop(crop); XCTAssertEqual(model.undoItems.count, 1)
+        model.undo(); XCTAssertEqual(model.document.layers, doc.layers)
+        model.redo(); XCTAssertEqual(model.document.layers[0], crop.layer)
+        let reopened = CollageStore(root: root)
+        XCTAssertEqual(reopened.documents.first?.layers[0], crop.layer)
+        model.close()
+    }
+    func testGridCountChangesResetTemplateButPreserveRemainingCropsAndUndo() throws {
+        let root = try testCollageRoot(); defer { try? FileManager.default.removeItem(at: root) }
+        let store = CollageStore(root: root)
+        var doc = CollageDocument(name: "Grid", kind: .grid)
+        doc.gridTemplateID = CollageGridTemplate.heroLeft.rawValue
+        doc.layers = [try testPhoto(store.directory(doc.id)), try testPhoto(store.directory(doc.id)), try testPhoto(store.directory(doc.id))]
+        doc.layers[0].zoom = 2; doc.layers[0].offsetX = 0.4
+        try store.save(doc)
+        let model = CollageEditorModel(document: doc, store: store)
+        model.removeGridPhoto(doc.layers[2].id)
+        XCTAssertEqual(model.document.photoCount, 2); XCTAssertEqual(model.document.gridTemplateID, "rows")
+        XCTAssertEqual(model.document.layers[0], doc.layers[0])
+        model.removeGridPhoto(doc.layers[0].id); XCTAssertEqual(model.document.photoCount, 2)
+        model.undo(); XCTAssertEqual(model.document, doc)
+        model.apply { $0.gridTemplateID = "heroTop" }
+        XCTAssertEqual(model.document.layers, doc.layers)
+        model.close()
+    }
     func testGridReorderIsUndoableAndRespectsLockedLayers() throws {
         let root = try testCollageRoot(); defer { try? FileManager.default.removeItem(at: root) }
         let workspace = CollageStore(root: root)

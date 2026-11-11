@@ -157,6 +157,7 @@ import ImageIO
     @Published var preview: UIImage?
     @Published var error: String?
     @Published var page = 0
+    @Published private(set) var gridImages: [UUID: UIImage] = [:]
     @Published private(set) var undoItems: [CollageDocument] = []
     @Published private(set) var redoItems: [CollageDocument] = []
     private var baseline: CollageDocument?
@@ -170,6 +171,9 @@ import ImageIO
     var selected: CollageLayer? { document.layers.first { $0.id == selection } }
     func apply(_ edit: (inout CollageDocument) -> Void) {
         let before = document; edit(&document)
+        if document.kind == .grid, before.photoCount != document.photoCount {
+            document.gridTemplateID = CollageGridTemplate.rows.rawValue
+        }
         guard before != document else { return }
         record(before); flush()
     }
@@ -179,6 +183,15 @@ import ImageIO
     func editLayer(_ edit: (inout CollageLayer) -> Void) {
         guard let id = selection, let i = document.layers.firstIndex(where: { $0.id == id }) else { return }
         apply { edit(&$0.layers[i]) }
+    }
+    func removeGridPhoto(_ id: UUID) {
+        guard document.kind == .grid, document.photoCount > 2,
+              document.layers.contains(where: { $0.id == id && $0.isPhoto && !$0.locked }) else { return }
+        apply { $0.layers.removeAll { $0.id == id } }; selection = nil
+    }
+    func commitGridCrop(_ crop: CollageGridCrop) {
+        guard let i = document.layers.firstIndex(where: { $0.id == crop.id && !$0.locked }) else { return }
+        apply { $0.layers[i] = crop.layer }
     }
     func undo() { guard let d = undoItems.popLast() else { return }; redoItems.append(document); document = d; selection = nil; flush() }
     func redo() { guard let d = redoItems.popLast() else { return }; undoItems.append(document); document = d; selection = nil; flush() }
@@ -261,6 +274,10 @@ import ImageIO
                 try Task.checkCancellation()
                 guard ticket == version else { return }
                 thumbnailCache = result.1
+                gridImages = Dictionary(uniqueKeysWithValues: doc.layers.compactMap { layer in
+                    guard let file = layer.file, let image = result.1[file] else { return nil }
+                    return (layer.id, image)
+                })
                 let image = result.0
                 preview = image
                 if !live, let bytes = image.jpegData(compressionQuality: 0.75) { try? bytes.write(to: folder.appendingPathComponent("preview.jpg"), options: .atomic) }
@@ -268,5 +285,5 @@ import ImageIO
             catch { guard ticket == version else { return }; self.error = error.localizedDescription; preview = nil }
         }
     }
-    func close() { endGesture(); previewTask?.cancel(); thumbnailCache = [:]; if error == nil { store.cleanup(document) } }
+    func close() { endGesture(); previewTask?.cancel(); thumbnailCache = [:]; gridImages = [:]; if error == nil { store.cleanup(document) } }
 }

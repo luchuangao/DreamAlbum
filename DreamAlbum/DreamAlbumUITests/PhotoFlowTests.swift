@@ -934,10 +934,11 @@ final class PhotoFlowTests: XCTestCase {
         markFixturePhoto()
         capture("pending-destructive-button")
     }
-    private func launchCollageFixture(english: Bool = false, failSave: Bool = false) {
+    private func launchCollageFixture(english: Bool = false, failSave: Bool = false, grid: Bool = false) {
         app.terminate()
         app.launchArguments = ["-AppleLanguages", english ? "(en)" : "(zh-Hans)", "-AppleLocale", english ? "en_US" : "zh_CN", "-dream_album.app_language", english ? "english" : "chinese", "-dailyInboxFixture", "-resetDailyFixture", "-resetCollageFixture"]
         if failSave { app.launchArguments.append("-failCollageSave") }
+        if grid { app.launchArguments.append("-gridCollageFixture") }
         app.launch(); visibleButton("tab.groups").tap()
     }
     private func createCollage(_ kind: String, count: Int = 2) {
@@ -945,7 +946,10 @@ final class PhotoFlowTests: XCTestCase {
         visibleButton("collage.kind."+kind).tap()
         let photos = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "collage.photo.")).allElementsBoundByIndex.filter { $0.isHittable }
         XCTAssertGreaterThanOrEqual(photos.count, count)
-        for photo in photos.prefix(count) { photo.tap() }
+        for (index, photo) in photos.prefix(count).enumerated() {
+            photo.tap()
+            XCTAssertEqual(photo.value as? String, String(index+1))
+        }
         visibleButton("collage.photos.confirm").tap()
         waitEnabled(app.buttons["collage.export"])
     }
@@ -954,6 +958,83 @@ final class PhotoFlowTests: XCTestCase {
         let entry = app.buttons["management.collages"]
         for _ in 0..<4 { if entry.isHittable { break }; app.swipeUp() }
         visibleButton("management.collages").tap()
+    }
+    func testGridDirectToolsCropCancelCommitSwapAndRestore() {
+        launchCollageFixture(grid: true)
+        app.staticTexts["测试分组"].tap(); createCollage("grid", count: 3)
+        XCTAssertTrue(app.buttons["grid.template.rows"].exists)
+        capture("grid-01-templates")
+        visibleButton("grid.template.heroTop").tap()
+        visibleButton("grid.tool.ratio").tap(); visibleButton("grid.ratio.3:4").tap()
+        capture("grid-02-ratio")
+        visibleButton("grid.tool.style").tap()
+        let spacing = app.sliders["grid.style.spacing"]
+        XCTAssertTrue(spacing.waitForExistence(timeout: 5)); spacing.adjust(toNormalizedSliderPosition: 0.3)
+        capture("grid-03-style")
+        visibleButton("grid.tool.photos").tap(); visibleButton("grid.photo.0").tap()
+        visibleButton("grid.action.crop").tap()
+        visibleButton("完整显示").tap(); capture("grid-04-crop-fit")
+        visibleButton("grid.crop.cancel").tap()
+        visibleButton("grid.action.crop").tap()
+        XCTAssertTrue(app.segmentedControls.buttons["填满"].isSelected)
+        visibleButton("完整显示").tap(); visibleButton("grid.crop.done").tap()
+        visibleButton("collage.undo").tap(); visibleButton("collage.redo").tap()
+        visibleButton("grid.photo.0").tap(); visibleButton("grid.action.swap").tap()
+        visibleButton("grid.photo.1").tap()
+        XCTAssertFalse(app.buttons["grid.swap.cancel"].exists)
+        capture("grid-05-swap")
+        visibleButton("grid.photo.2").tap(); visibleButton("grid.action.remove").tap()
+        visibleButton("grid.tool.templates").tap()
+        XCTAssertFalse(app.buttons["grid.template.heroTop"].exists)
+        visibleButton("collage.undo").tap()
+        visibleButton("collage.editor.done").tap()
+        app.terminate(); app.launchArguments.removeAll { ["-resetDailyFixture", "-resetCollageFixture"].contains($0) }; app.launch()
+        openCollageDrafts()
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "collage.draft.")).firstMatch.tap()
+        waitEnabled(app.buttons["collage.export"])
+        capture("grid-06-restored")
+    }
+    func testGridLongPressSwapOrdinaryDragAndDoubleTapCrop() {
+        launchCollageFixture()
+        app.staticTexts["测试分组"].tap(); createCollage("grid", count: 2)
+        let query = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "collage.layer."))
+        let first = query.element(boundBy: 0), second = query.element(boundBy: 1)
+        XCTAssertTrue(first.waitForExistence(timeout: 8))
+        let id = first.identifier
+        let start = first.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let end = second.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        start.press(forDuration: 0.01, thenDragTo: end)
+        XCTAssertFalse(app.buttons["collage.undo"].isEnabled)
+        start.press(forDuration: 0.6, thenDragTo: end)
+        waitEnabled(app.buttons["collage.undo"])
+        XCTAssertNotEqual(query.element(boundBy: 0).identifier, id)
+        visibleButton("collage.undo").tap()
+        XCTAssertEqual(query.element(boundBy: 0).identifier, id)
+        let restored = query.element(boundBy: 0)
+        restored.doubleTap()
+        XCTAssertTrue(app.buttons["grid.crop.done"].waitForExistence(timeout: 5))
+        let cropCanvas = app.otherElements["grid.crop.canvas"]
+        XCTAssertTrue(cropCanvas.waitForExistence(timeout: 5))
+        cropCanvas.pinch(withScale: 1.8, velocity: 1)
+        XCTAssertNotEqual(cropCanvas.value as? String, "1.00")
+        let cropStart = cropCanvas.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        cropStart.press(forDuration: 0.01, thenDragTo: cropStart.withOffset(CGVector(dx: 30, dy: 20)))
+        capture("grid-double-tap-crop")
+        visibleButton("grid.crop.cancel").tap()
+        let cancelStart = query.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        cancelStart.press(forDuration: 0.6, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)))
+        XCTAssertFalse(app.buttons["collage.undo"].isEnabled)
+    }
+    func testGridNinePhotosEnglishTemplatesAndExport() {
+        launchCollageFixture(english: true, grid: true)
+        app.staticTexts["测试分组"].tap(); createCollage("grid", count: 9)
+        capture("grid-nine-english")
+        visibleButton("grid.tool.photos").tap()
+        let strip = app.buttons["grid.photos.add"]
+        XCTAssertTrue(strip.exists); XCTAssertFalse(strip.isEnabled)
+        visibleButton("collage.export").tap(); visibleButton("collage.export.generate").tap()
+        waitEnabled(app.buttons["collage.export.photos"])
+        capture("grid-nine-export")
     }
     func testCollageFiveKindsAndDraftsPersistAcrossRelaunch() {
         launchCollageFixture()

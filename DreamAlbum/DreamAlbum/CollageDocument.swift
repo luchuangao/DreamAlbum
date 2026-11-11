@@ -25,6 +25,8 @@ enum CollageRatio: String, CaseIterable, Codable, Identifiable, Sendable {
     }
 }
 
+enum CollagePhotoFit: String, Codable, Sendable { case fill, fit }
+
 struct CollageLayer: Codable, Equatable, Identifiable, Sendable {
     var id = UUID()
     var file: String? = nil
@@ -38,6 +40,7 @@ struct CollageLayer: Codable, Equatable, Identifiable, Sendable {
     var height = 0.55
     var rotation = 0.0
     var zoom = 1.0
+    var photoFit: CollagePhotoFit? = nil
     var offsetX = 0.0
     var offsetY = 0.0
     var cropTop = 0.0
@@ -62,6 +65,8 @@ struct CollageDocument: Codable, Equatable, Identifiable, Sendable {
     var updatedAt = Date()
     var ratio: CollageRatio = .square
     var layout = 0
+    // nil preserves the exact layout of a build 22 draft.
+    var gridTemplateID: String? = nil
     var horizontal = false
     var spacing = 0.015
     var margin = 0.035
@@ -76,6 +81,7 @@ struct CollageDocument: Codable, Equatable, Identifiable, Sendable {
     var isValidCount: Bool { kind.limits.contains(photoCount) }
     mutating func setKind(_ kind: CollageKind) {
         self.kind = kind; layout = 0
+        if kind == .grid { gridTemplateID = CollageGridTemplate.rows.rawValue }
         ratio = kind == .poster ? .portrait : (kind == .comparison ? .landscape : .square)
         // Strips use axis-aligned source regions for both preview and paged export.
         if kind == .strip { for i in layers.indices where layers[i].isPhoto { layers[i].rotation = 0 } }
@@ -143,7 +149,9 @@ struct CollageGeometry {
             let h = max(1, (area.height-gap*CGFloat(rows-1))/CGFloat(rows))
             return (0..<count).map { CGRect(x: area.minX+CGFloat($0 % columns)*(w+gap), y: area.minY+CGFloat($0/columns)*(h+gap), width: w, height: h) }
         }
-        if doc.kind == .comparison {
+        if doc.kind == .grid, let id = doc.gridTemplateID, let template = CollageGridTemplate(rawValue: id) {
+            rects = template.rects(in: content, count: n, gap: gap)
+        } else if doc.kind == .comparison {
             rects = grid(content, count: n, columns: doc.layout == 1 ? 1 : (doc.layout == 2 ? 2 : max(n, 1)))
         } else if n > 1 && (doc.layout != 0 || doc.kind == .poster) {
             let verticalHero = doc.layout != 1
@@ -171,7 +179,7 @@ struct CollageGeometry {
         let width = max(1, layer.pixelWidth), height = max(1, layer.pixelHeight)
         let cw = width * max(0.1, 1-layer.cropLeft-layer.cropRight)
         let ch = height * max(0.1, 1-layer.cropTop-layer.cropBottom)
-        let scale = max(box.width/cw, box.height/ch) * layer.zoom
+        let scale = layer.photoFit == .fit ? min(box.width/cw, box.height/ch) : max(box.width/cw, box.height/ch) * layer.zoom
         let w = width*scale, h = height*scale
         let visibleW = cw*scale, visibleH = ch*scale
         return CGRect(x: box.midX-visibleW/2-layer.cropLeft*w + layer.offsetX*max(0, visibleW-box.width)/2,

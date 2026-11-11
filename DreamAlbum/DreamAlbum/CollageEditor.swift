@@ -20,6 +20,9 @@ struct CollageEditor: View {
     private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
     var body: some View {
         GeometryReader { outer in
+            if model.document.kind == .grid {
+                CollageGridEditor(model: model, addPhotos: { replace in replacing = replace; photos = true }, showLayers: { layers = true }, showAdvanced: { tool = "advanced"; tools = true })
+            } else {
             HStack(spacing: 0) {
                 VStack(spacing: 0) {
                     if model.pages.count > 1 {
@@ -30,11 +33,12 @@ struct CollageEditor: View {
                 }
                 if outer.size.width >= 750 { inspector.frame(width: 300).background(theme.surface) }
             }
+            }
         }
         .background(AlbumBackground()).navigationTitle(model.document.name).navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true).toolbar(.visible, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button(c("完成", "Done")) { model.endGesture(); if model.error == nil { if let onClose { onClose() } else { dismiss() } } }.accessibilityIdentifier("collage.editor.done") }
+            ToolbarItem(placement: .cancellationAction) { Button(model.document.kind == .grid ? c("返回", "Back") : c("完成", "Done")) { model.endGesture(); if model.error == nil { if let onClose { onClose() } else { dismiss() } } }.accessibilityIdentifier("collage.editor.done") }
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Button { model.undo() } label: { Image(systemName: "arrow.uturn.backward") }.disabled(model.undoItems.isEmpty).keyboardShortcut("z", modifiers: .command).accessibilityLabel(c("撤销", "Undo")).accessibilityIdentifier("collage.undo")
                 Button { model.redo() } label: { Image(systemName: "arrow.uturn.forward") }.disabled(model.redoItems.isEmpty).keyboardShortcut("z", modifiers: [.command, .shift]).accessibilityLabel(c("重做", "Redo")).accessibilityIdentifier("collage.redo")
@@ -141,7 +145,7 @@ struct CollageCanvas: View {
 
 /// The touch surface has exactly the layer's bounds. Its window coordinate space
 /// stays stable while SwiftUI moves and rotates the underlying layer.
-private struct CollageLayerInput: UIViewRepresentable {
+struct CollageLayerInput: UIViewRepresentable {
     let model: CollageEditorModel
     let layer: CollageLayer
     let canvasSize: CGSize
@@ -243,9 +247,11 @@ struct CollageInspector: View {
                         ColorPicker(c("文字颜色", "Text color"), selection: layerColor)
                     } else {
                         layerSlider(c("边框", "Border"), \.border, 0...0.12)
+                        if model.document.kind != .grid {
                         layerSlider(c("缩放", "Zoom"), \.zoom, 1...5)
                         layerSlider(c("水平位置", "Horizontal position"), \.offsetX, -1...1)
                         layerSlider(c("垂直位置", "Vertical position"), \.offsetY, -1...1)
+                        }
                         if model.document.kind == .strip {
                             layerSlider(c("裁去顶部", "Crop top"), \.cropTop, 0...0.45)
                             layerSlider(c("裁去底部", "Crop bottom"), \.cropBottom, 0...0.45)
@@ -268,7 +274,7 @@ struct CollageInspector: View {
                     ForEach(CollageKind.allCases) { Text($0.title(store.appLanguage)).tag($0) }
                 }
                 if model.document.kind == .strip { Toggle(c("横向拼接", "Horizontal"), isOn: Binding(get: { model.document.horizontal }, set: { value in model.apply { $0.horizontal = value } })) }
-                else {
+                else if model.document.kind != .grid {
                     Picker(c("比例", "Ratio"), selection: Binding(get: { model.document.ratio }, set: { value in model.apply { $0.ratio = value } })) { ForEach(CollageRatio.allCases) { Text($0.rawValue).tag($0) } }
                     if model.document.kind != .freeform {
                         Picker(c("模板", "Template"), selection: Binding(get: { model.document.layout }, set: { value in model.apply { $0.layout = value } })) {
@@ -276,10 +282,12 @@ struct CollageInspector: View {
                         }.pickerStyle(.menu)
                     }
                 }
+                if model.document.kind != .grid {
                 ColorPicker(c("背景", "Background"), selection: backgroundColor, supportsOpacity: false)
                 docSlider(c("图片间距", "Spacing"), \.spacing, 0...0.06)
                 docSlider(c("外边距", "Margin"), \.margin, 0...0.12)
                 docSlider(c("圆角", "Corners"), \.corner, 0...0.2)
+                }
             }
             if model.document.kind == .poster {
                 Section(c("海报文字", "Poster text")) {

@@ -99,6 +99,7 @@ struct CollagePhotoPicker: View {
                                         .background(selection.contains(photo.id) ? theme.accent : Color.black.opacity(0.3), in: Circle())
                                         .overlay(Circle().stroke(.white, lineWidth: 2)).padding(6)
                                 }
+                                .contentShape(Rectangle())
                         }.buttonStyle(.plain).accessibilityLabel(c("选择照片", "Select photo"))
                             .accessibilityValue(selection.firstIndex(of: photo.id).map { String($0+1) } ?? "0")
                             .accessibilityIdentifier("collage.photo."+photo.id)

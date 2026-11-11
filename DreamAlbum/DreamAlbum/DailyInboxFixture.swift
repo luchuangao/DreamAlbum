@@ -73,6 +73,9 @@ final class DailyInboxFixture: PhotoLibraryService {
             members = ["editable": ["p0", "p1"], "second": ["p2"], "third": []]
         }
         assets = photos
+        if ProcessInfo.processInfo.arguments.contains("-gridCollageFixture") {
+            members["editable"] = Set(assets.map(\.id))
+        }
         let args = ProcessInfo.processInfo.arguments
         if let index = args.firstIndex(of: "-fixturePendingCount"), args.indices.contains(index + 1),
            let count = Int(args[index + 1]) {

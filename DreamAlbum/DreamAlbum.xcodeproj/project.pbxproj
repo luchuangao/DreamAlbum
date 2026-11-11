@@ -46,6 +46,8 @@
 		0E42ABD1FD0D21CDE8896674 /* CollageEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E463A9C8ABD2CCDEB9156E50 /* CollageEditor.swift */; };
 		18A12AC5834A8BBD322AD683 /* CollageExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17A7B72B1ED5CACBA6BEEFED /* CollageExport.swift */; };
 		0D5D5259CD22B34DF1378753 /* CollageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D73446817C5459CF549C61 /* CollageTests.swift */; };
+		8AE0DB975FD04FB68F743F1D /* CollageGridTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23BB490EA4744B7594C36E6C /* CollageGridTemplate.swift */; };
+		1D546C146F8048D1AB065025 /* CollageGridEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A3996E6C21B448AA47A5D91 /* CollageGridEditor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -131,6 +133,8 @@
 		E463A9C8ABD2CCDEB9156E50 /* CollageEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollageEditor.swift; sourceTree = "<group>"; };
 		17A7B72B1ED5CACBA6BEEFED /* CollageExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollageExport.swift; sourceTree = "<group>"; };
 		C5D73446817C5459CF549C61 /* CollageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollageTests.swift; sourceTree = "<group>"; };
+		23BB490EA4744B7594C36E6C /* CollageGridTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollageGridTemplate.swift; sourceTree = "<group>"; };
+		0A3996E6C21B448AA47A5D91 /* CollageGridEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollageGridEditor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -192,6 +196,8 @@
 				D8461EB58D604F63DCFD3302 /* CollageStore.swift */,
 				E2BD4E765F76C7E19307D9B2 /* CollageViews.swift */,
 				E463A9C8ABD2CCDEB9156E50 /* CollageEditor.swift */,
+				0A3996E6C21B448AA47A5D91 /* CollageGridEditor.swift */,
+				23BB490EA4744B7594C36E6C /* CollageGridTemplate.swift */,
 				17A7B72B1ED5CACBA6BEEFED /* CollageExport.swift */,
 				ABCDEF100000000000000001 /* PhotoReviewSession.swift */,
 				111111111111111111111002 /* RootView.swift */,
@@ -439,6 +445,8 @@
 				075A7FC267FBED372C2E23FD /* CollageStore.swift in Sources */,
 				8CEA1D619E773D9AACE7EFEA /* CollageViews.swift in Sources */,
 				0E42ABD1FD0D21CDE8896674 /* CollageEditor.swift in Sources */,
+				1D546C146F8048D1AB065025 /* CollageGridEditor.swift in Sources */,
+				8AE0DB975FD04FB68F743F1D /* CollageGridTemplate.swift in Sources */,
 				18A12AC5834A8BBD322AD683 /* CollageExport.swift in Sources */,
 				ABCDEF200000000000000001 /* PhotoReviewSession.swift in Sources */,
 				111111111111111111111102 /* RootView.swift in Sources */,
@@ -637,7 +645,7 @@
 				"CODE_SIGNING_ALLOWED[sdk=macosx*]" = NO;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbum/DreamAlbum.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				DEVELOPMENT_ASSET_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DreamAlbum/Info.plist;
@@ -666,7 +674,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbum/DreamAlbum.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				DEVELOPMENT_ASSET_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DreamAlbum/Info.plist;
@@ -759,7 +767,7 @@
 				"CODE_SIGNING_ALLOWED[sdk=macosx*]" = NO;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbumWidget/DreamAlbumWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				DEVELOPMENT_TEAM = VFDQL6Z55P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = DreamAlbumWidget/Info.plist;
@@ -788,7 +796,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbumWidget/DreamAlbumWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				DEVELOPMENT_TEAM = VFDQL6Z55P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = DreamAlbumWidget/Info.plist;
