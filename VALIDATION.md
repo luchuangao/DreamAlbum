@@ -338,3 +338,10 @@ Grid editing now keeps the canvas visible above Templates / Ratio / Style / Phot
 - The two existing regression flows (freeform drag/undo/lock and export/save/share/attach/draft management) passed in `iphone.xcresult`. Final screenshots for phone templates, nine-photo English layout, crop Fit, iPad's six-template sidebar and SE's compact editor were opened and inspected. Raw screenshots, recordings and logs remain only under ignored `.ui-checks/grid-v23/`.
 - Final `build-gestures.log` (simulator test build), `build-device-final.log` (signed iOS) and `build-mac-final.log` (Mac Catalyst, signing disabled) succeeded. All four project build numbers are 23. No App Store release, real-photo deletion or user data reset was performed. Full VoiceOver, physical-device gesture performance and interrupted iCloud downloads were not certified by these checks.
 - On 2026-11-12, the signed build installed over the existing app on the paired iPhone 15 after the user unlocked it. The device inventory confirmed version 1.1, build 23. The install and inventory receipts are in `.ui-checks/grid-v23/`.
+
+## 2026-11-18 — grid template taps (1.1, build 24)
+
+The entire template card responds to taps, including the photo preview. The preview does not handle touches itself, so the button supplies an explicit rectangular hit area.
+
+- An eight-photo regression test tapped directly on the preview images for Columns and Hero Above. It verified the selection indicator, the new canvas positions, and undo and redo. The final test passed on iPhone SE (3rd generation), iOS 18.6, and iPad Pro 11-inch, iPadOS 26.5. The initial build 23 test attempts timed out while initializing simulator accessibility.
+- The signed iOS, simulator test, and Mac Catalyst builds succeeded. Results are under `.ui-checks/grid-v24/`.

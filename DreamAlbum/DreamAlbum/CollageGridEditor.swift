@@ -123,7 +123,10 @@ struct CollageGridEditor: View {
                         if selected { Image(systemName: "checkmark.circle.fill").symbolRenderingMode(.palette).foregroundStyle(.white, theme.accent).padding(2) }
                     }
                 Text(name).font(.caption).lineLimit(1)
-            }.foregroundStyle(selected ? theme.accent : theme.primary)
+            }
+            // The miniature draws the photos but leaves touches to the enclosing button.
+            .contentShape(Rectangle())
+            .foregroundStyle(selected ? theme.accent : theme.primary)
         }.buttonStyle(.plain).accessibilityLabel(name).accessibilityAddTraits(selected ? .isSelected : [])
             .accessibilityIdentifier("grid.template." + id)
     }

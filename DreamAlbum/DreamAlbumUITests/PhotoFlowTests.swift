@@ -959,6 +959,37 @@ final class PhotoFlowTests: XCTestCase {
         for _ in 0..<4 { if entry.isHittable { break }; app.swipeUp() }
         visibleButton("management.collages").tap()
     }
+    func testGridTemplateThumbnailsSwitchEightPhotoCanvas() {
+        launchCollageFixture(grid: true)
+        app.staticTexts["测试分组"].tap(); createCollage("grid", count: 8)
+        let rows = app.buttons["grid.template.rows"]
+        let columns = visibleButton("grid.template.columns")
+        let hero = visibleButton("grid.template.heroTop")
+        let photos = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "collage.layer.")).allElementsBoundByIndex
+        XCTAssertEqual(photos.count, 8)
+        let firstPhoto = app.buttons[photos[0].identifier]
+        let lastPhoto = app.buttons[photos[7].identifier]
+        XCTAssertTrue(rows.isSelected)
+        let originalFrame = firstPhoto.frame
+        let originalLastFrame = lastPhoto.frame
+        XCTAssertFalse(originalFrame.isEmpty)
+        XCTAssertFalse(originalLastFrame.isEmpty)
+
+        // Tap the image in each card at the position a user would touch it.
+        columns.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+        XCTAssertTrue(columns.isSelected)
+        XCTAssertFalse(rows.isSelected)
+        XCTAssertNotEqual(lastPhoto.frame, originalLastFrame)
+        hero.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+        XCTAssertTrue(hero.isSelected)
+        XCTAssertFalse(columns.isSelected)
+        XCTAssertGreaterThan(firstPhoto.frame.width, originalFrame.width)
+
+        visibleButton("collage.undo").tap()
+        XCTAssertTrue(columns.isSelected)
+        visibleButton("collage.redo").tap()
+        XCTAssertTrue(hero.isSelected)
+    }
     func testGridDirectToolsCropCancelCommitSwapAndRestore() {
         launchCollageFixture(grid: true)
         app.staticTexts["测试分组"].tap(); createCollage("grid", count: 3)
