@@ -346,3 +346,7 @@ The entire template card responds to taps, including the photo preview. The prev
 - An eight-photo regression test tapped directly on the preview images for Columns and Hero Above. It verified the selection indicator, the new canvas positions, and undo and redo. The final test passed on iPhone SE (3rd generation), iOS 18.6, and iPad Pro 11-inch, iPadOS 26.5. The initial build 23 test attempts timed out while initializing simulator accessibility.
 - The signed iOS, simulator test, and Mac Catalyst builds succeeded. Results are under `.ui-checks/grid-v24/`.
 - The signed build installed over the existing app on iPhone 15. The device inventory confirmed version 1.1, build 24. The receipts are in `.ui-checks/grid-v24/`.
+
+## 2026-11-19 — App Store Connect 1.2 preparation (build 25)
+
+The Release archive succeeded for version 1.2, build 25, and its signature verified. The archive uses the available development identity. App Store distribution export and upload failed because Xcode reported missing account credentials. An Apple account with App Store Connect access must be signed in before distribution signing and upload can continue. The archive and diagnostic logs remain in `.ui-checks/appstore-1.2/`.
