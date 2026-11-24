@@ -360,3 +360,7 @@ The Release archive succeeded for version 1.2, build 25, and its signature verif
 - iPhone 17 Pro 和 iPad Pro 11 英寸各通过 3 项界面测试，覆盖第 20 次成功、第 21 次保持当前照片、待删清单、撤销返还、英文拼图类型及 4096 px 限制、免费宫格导出、以及「我的」中的老用户权益。截图和结果位于本机 `.ui-checks/paywall-v26/`。iOS 和 Mac Catalyst 的 Release 构建通过。
 - Xcode 的 Debug 运行方案使用 `DreamAlbum/DreamAlbumTests/ProTesting.storekit`。此文件里的 ¥28 为本地测试价。iOS 26.5 的命令行环境未能激活本地 StoreKit 商品，购买链路改在 iOS 18.6 验证。
 - 商店商品 ID 为 `com.luchuangao.mengxiangxiangce.premium`，类型为非消耗型。正式价格以 App Store Connect 为准，App 使用 StoreKit 返回的本地化价格。正式接入需在 App Store Connect 完成商品和定价配置，随后通过 TestFlight 核对商店商品和恢复购买。构建 26 尚未上传或送审。
+
+## 2026-11-24 — App Store Connect 1.3 upload (build 26)
+
+The Release archive for version 1.3 build 26 succeeded, and Xcode successfully uploaded it to App Store Connect using automatic distribution signing. Xcode reported that the uploaded package was processing. An independent check of the final processing status could not be completed because the browser connection timed out. No App Store submission was made. The archive and upload logs are stored locally in `.ui-checks/appstore-1.3/`.
