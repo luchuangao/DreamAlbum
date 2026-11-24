@@ -1,4 +1,5 @@
 import PhotosUI
+import StoreKit
 import SwiftUI
 import UIKit
 
@@ -10,7 +11,9 @@ struct SettingsView: View {
     @EnvironmentObject private var collages: CollageStore
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var reminder: PhotoSortingReminder
+    @EnvironmentObject private var purchaseStore: PurchaseStore
     @State private var showingPending = false
+    @State private var showingPremium = false
     private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
     var body: some View {
         NavigationStack {
@@ -28,6 +31,10 @@ struct SettingsView: View {
                         Spacer(minLength: 0)
                     }.padding(.horizontal, 16).padding(.vertical, 23).frame(maxWidth: .infinity, alignment: .leading)
                         .background(theme.surface, in: RoundedRectangle(cornerRadius: 14))
+                    Button { showingPremium = true } label: {
+                        managementRow("sparkles", c("梦想相册 Pro", "Dream Album Pro"), premiumSummary)
+                            .padding(.horizontal, 16).background(theme.surface, in: RoundedRectangle(cornerRadius: 14))
+                    }.buttonStyle(.plain).accessibilityIdentifier("management.pro")
                     managementSection(c("照片管理", "Photo management")) {
                         managementLink("photo.on.rectangle", c("全部照片", "All photos"), library.hasAccess ? "\(library.photos.count)" : "—") {
                             PhotoBrowserView().libraryErrorAlert()
@@ -89,7 +96,13 @@ struct SettingsView: View {
             .navigationTitle("").navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingPending) { NavigationStack { PendingPhotosView() } }
+            .sheet(isPresented: $showingPremium) { PremiumUnlockSheet(offer: .overview) }
         }
+    }
+    private var premiumSummary: String {
+        if purchaseStore.access == .legacy { return c("老用户权益", "Legacy access") }
+        if purchaseStore.isPremiumUnlocked { return c("已解锁", "Unlocked") }
+        return c("一次买断", "One-time purchase")
     }
     private var rowDivider: some View { Rectangle().fill(theme.separator).frame(height: 0.5).padding(.leading, 36) }
     private func managementSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -435,115 +448,126 @@ private struct TimelineStyleButton: View {
 }
 
 struct PremiumUnlockSheet: View {
+    enum Offer {
+        case overview, review, albums, collage, export
+    }
+
+    var offer: Offer = .albums
     @Environment(\.albumTheme) private var theme
     @EnvironmentObject private var store: DreamStore
-    @EnvironmentObject private var purchaseStore: PurchaseStore
+    @EnvironmentObject private var library: PhotoLibraryStore
+    @EnvironmentObject private var purchases: PurchaseStore
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Image(systemName: "crown.fill")
-                            .font(.system(size: 30, weight: .black))
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Image(systemName: "sparkles").font(.title2.weight(.semibold))
+                            .frame(width: 48, height: 48)
                             .foregroundStyle(theme.accent)
-                            .frame(width: 58, height: 58)
-                            .background(theme.accent.opacity(0.14), in: Circle())
-
-                        Text(copy("解锁梦想相册 Pro", "Unlock Dream Album Pro"))
-                            .font(.system(size: 30, weight: .black, design: .rounded))
-                            .foregroundStyle(Color.primary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Text(copy("不限量画册。", "Unlimited dream albums. Make room for more dreams."))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .background(theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+                            .accessibilityHidden(true)
+                        Text(c("梦想相册 Pro", "Dream Album Pro")).font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
+                        Text(context).font(.subheadline).foregroundStyle(theme.secondary)
+                            .accessibilityIdentifier("premium.context")
                     }
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        PremiumFeatureRow(symbol: "rectangle.stack.fill", title: copy("免费可用", "Included free"), subtitle: copy("照片整理、分组与成长记录", "Photo review, groups, and growth records"))
-                        PremiumFeatureRow(symbol: "infinity", title: copy("不限量梦想相册", "Unlimited dream albums"), subtitle: copy("免费版最多 \(DreamStore.freeActiveDreamLimit) 本活跃相册", "Free version supports up to \(DreamStore.freeActiveDreamLimit) active albums"))
+                    VStack(spacing: 8) {
+                        PremiumFeatureRow(symbol: "photo.on.rectangle.angled", title: c("不限张数整理", "Unlimited photo review"),
+                                          subtitle: c("免费版每天可整理 \(PremiumAccess.freeDailyReviewLimit) 张", "Free includes \(PremiumAccess.freeDailyReviewLimit) reviews a day"))
+                        PremiumFeatureRow(symbol: "book", title: c("不限活跃画册", "Unlimited active albums"),
+                                          subtitle: c("免费版可同时保留 \(DreamStore.freeActiveDreamLimit) 本活跃画册", "Free includes \(DreamStore.freeActiveDreamLimit) active albums"))
+                        PremiumFeatureRow(symbol: "square.grid.2x2", title: c("全部拼图类型与高清导出", "All collage styles and high-res export"),
+                                          subtitle: c("免费版支持宫格和 2048 px 导出", "Free includes grid collages and 2048 px export"))
                     }
+                    Text(c("浏览、分组、成长记录和 iCloud 同步均可免费使用。", "Browsing, groups, growth records, and iCloud sync are free."))
+                        .font(.footnote).foregroundStyle(theme.secondary)
 
-                    if purchaseStore.isPremiumUnlocked {
-                        Label(copy("你已经解锁 Pro", "Pro is already unlocked"), systemImage: "checkmark.seal.fill")
-                            .font(.headline.weight(.bold))
+                    if purchases.isPremiumUnlocked {
+                        Label(purchases.access == .legacy ? c("已保留老用户权益", "Legacy access is active") : c("Pro 已解锁", "Pro unlocked"),
+                              systemImage: "checkmark.seal.fill")
+                            .font(.headline)
                             .foregroundStyle(theme.accent)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .frame(maxWidth: .infinity).padding(14)
+                            .background(theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+                            .accessibilityIdentifier("premium.unlocked")
                     } else {
-                        VStack(spacing: 10) {
-                            Button {
-                                Task {
-                                    await purchaseStore.purchasePremium()
-                                    if purchaseStore.isPremiumUnlocked {
-                                        dismiss()
-                                    }
-                                }
-                            } label: {
-                                HStack {
-                                    if purchaseStore.isLoading {
-                                        ProgressView()
-                                            .tint(.white)
-                                    }
-                                    Text(copy("解锁 Pro", "Unlock Pro"))
-                                    Spacer()
-                                    Text(purchaseStore.premiumDisplayPrice)
-                                }
-                                .font(.headline.weight(.bold))
-                                .padding(.horizontal, 18)
-                                .padding(.vertical, 14)
-                                .background(theme.accent, in: Capsule())
-                                .foregroundStyle(theme.background)
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(purchaseStore.isLoading)
-
-                            Button(copy("恢复购买", "Restore Purchases")) {
-                                Task {
-                                    await purchaseStore.restorePurchases()
-                                    if purchaseStore.isPremiumUnlocked {
-                                        dismiss()
-                                    }
-                                }
-                            }
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(theme.accent)
-                            .buttonStyle(.plain)
-
-                            if let message = purchaseStore.purchaseMessage {
-                                Text(message)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
+                        purchaseOptions
                     }
-                }
-                .padding(24)
+                }.frame(maxWidth: 480, alignment: .leading).padding(22).frame(maxWidth: .infinity)
             }
             .background(AlbumBackground())
-            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(copy("关闭", "Close")) { dismiss() }
+                    Button(c("关闭", "Close")) { dismiss() }.accessibilityIdentifier("premium.close")
                 }
             }
-            .task {
-                if purchaseStore.premiumProduct == nil {
-                    await purchaseStore.loadProducts()
-                }
+            .task { if purchases.access.canPurchase { await purchases.loadProducts() } }
+            .onChange(of: purchases.access) { _, access in
+                if access.isUnlocked, offer != .overview { dismiss() }
+                if access.canPurchase { Task { await purchases.loadProducts() } }
             }
         }
     }
 
-    private func copy(_ chinese: String, _ english: String) -> String {
-        AlbumCopy.pick(store.appLanguage, chinese, english)
+    private var purchaseOptions: some View {
+        VStack(spacing: 10) {
+            if purchases.access == .checking || purchases.isLoadingPrice || purchases.isBusy {
+                ProgressView().frame(minHeight: 44)
+                    .accessibilityLabel(c("正在连接 App Store", "Connecting to the App Store"))
+            } else if purchases.access.canPurchase, let product = purchases.premiumProduct {
+                Button {
+                    Task { await purchases.purchasePremium() }
+                } label: {
+                    HStack {
+                        Text(c("一次买断 Pro", "Buy Pro once"))
+                        Spacer(minLength: 12)
+                        Text(product.displayPrice).monospacedDigit()
+                    }.font(.headline).frame(minHeight: 36).foregroundStyle(.white)
+                }.buttonStyle(.borderedProminent).tint(theme.accent)
+                    .accessibilityIdentifier("premium.buy")
+            } else {
+                Button {
+                    Task {
+                        await purchases.refresh()
+                        if purchases.access.canPurchase { await purchases.loadProducts() }
+                    }
+                } label: {
+                    Text(c("重试连接", "Try again")).foregroundStyle(.white)
+                }.buttonStyle(.borderedProminent).tint(theme.accent).accessibilityIdentifier("premium.retry")
+                if purchases.access == .unverified {
+                    Text(c("暂时无法验证账户权益。", "Account access could not be verified."))
+                        .font(.footnote).foregroundStyle(theme.secondary)
+                }
+            }
+            Button(c("恢复购买", "Restore purchases")) { Task { await purchases.restorePurchases() } }
+                .disabled(purchases.isBusy).frame(minHeight: 44).accessibilityIdentifier("premium.restore")
+            if let message = purchases.message {
+                Text(message.text(store.appLanguage)).font(.footnote).foregroundStyle(theme.secondary)
+                    .accessibilityIdentifier("premium.message")
+            }
+        }.frame(maxWidth: .infinity)
     }
+
+    private var context: String {
+        if purchases.isPremiumUnlocked { return c("一次解锁全部 Pro 功能。", "All Pro features are available.") }
+        switch offer {
+        case .overview: return c("一次买断，随时整理照片和制作拼图。", "One purchase for unlimited photo review and more collage options.")
+        case .review:
+            let remaining = library.reviewsRemaining ?? 0
+            return remaining == 0
+                ? c("今日 \(PremiumAccess.freeDailyReviewLimit) 张已用完。明天可继续免费整理。", "You’ve used today’s \(PremiumAccess.freeDailyReviewLimit) reviews. Your free allowance resets tomorrow.")
+                : c("今天还可免费整理 \(remaining) 张。", "You have \(remaining) free reviews left today.")
+        case .albums: return c("解锁 Pro，即可保留更多活跃画册。", "Unlock Pro to keep more active dream albums.")
+        case .collage: return c("加入 Pro，制作长图、对比拼图、海报和自由拼贴。", "Unlock strips, comparisons, posters, and freeform collages.")
+        case .export: return c("解锁长边 4096 px 导出。", "Unlock 4096 px long-edge exports.")
+        }
+    }
+
+    private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
 }
 
 private struct PremiumFeatureRow: View {

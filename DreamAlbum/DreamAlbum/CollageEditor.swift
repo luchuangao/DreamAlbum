@@ -232,6 +232,8 @@ struct CollageLayerInput: UIViewRepresentable {
 struct CollageInspector: View {
     @ObservedObject var model: CollageEditorModel
     @EnvironmentObject private var store: DreamStore
+    @EnvironmentObject private var purchases: PurchaseStore
+    @State private var showPremium = false
     @Environment(\.albumTheme) private var theme
     let tab: String
     let changeKind: (CollageKind) -> Void
@@ -270,8 +272,11 @@ struct CollageInspector: View {
             }
             Section(c("排版", "Layout")) {
                 TextField(c("拼图名称", "Collage name"), text: docBinding(\.name)).accessibilityIdentifier("collage.name")
-                Picker(c("类型", "Type"), selection: Binding(get: { model.document.kind }, set: changeKind)) {
-                    ForEach(CollageKind.allCases) { Text($0.title(store.appLanguage)).tag($0) }
+                Picker(c("类型", "Type"), selection: Binding(get: { model.document.kind }, set: selectKind)) {
+                    ForEach(CollageKind.allCases) { kind in
+                        let title = kind.title(store.appLanguage)
+                        Text(purchases.access.allows(kind) || kind == model.document.kind ? title : title + " · Pro").tag(kind)
+                    }
                 }
                 if model.document.kind == .strip { Toggle(c("横向拼接", "Horizontal"), isOn: Binding(get: { model.document.horizontal }, set: { value in model.apply { $0.horizontal = value } })) }
                 else if model.document.kind != .grid {
@@ -300,7 +305,14 @@ struct CollageInspector: View {
                 Section(c("日期", "Date")) { TextField(c("日期（可选）", "Date (optional)"), text: docBinding(\.dateText)) }
             }
         }.scrollContentBackground(.hidden).background(AlbumBackground())
+        .sheet(isPresented: $showPremium) { PremiumUnlockSheet(offer: .collage) }
     }
+    private func selectKind(_ kind: CollageKind) {
+        guard kind != model.document.kind else { return }
+        if purchases.access.allows(kind) { changeKind(kind) }
+        else { showPremium = true }
+    }
+
     private func templateName(_ i: Int) -> String {
         switch model.document.kind {
         case .poster: return [c("目标", "Goal"), c("旅行", "Travel"), c("成长", "Growth")][i]

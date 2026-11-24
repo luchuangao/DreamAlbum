@@ -1,0 +1,37 @@
+{
+  "identifier": "30948A88-7D85-44EA-91EB-0EE08D075C5D",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "28.00",
+      "familyShareable": false,
+      "internalID": "E593EF85-3B13-461F-9E96-9B284292873C",
+      "localizations": [
+        {
+          "description": "不限量整理与活跃画册、全部拼图类型及高清导出。",
+          "displayName": "梦想相册 Pro",
+          "locale": "zh_CN"
+        },
+        {
+          "description": "Unlimited reviews and active albums, all collage styles, and high-resolution exports.",
+          "displayName": "Dream Album Pro",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.luchuangao.mengxiangxiangce.premium",
+      "referenceName": "Dream Album Pro",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_locale": "zh_CN",
+    "_storefront": "CHN",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

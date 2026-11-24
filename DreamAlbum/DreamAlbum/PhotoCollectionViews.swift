@@ -224,6 +224,7 @@ struct DreamImportView: View {
     @State private var targetID: UUID?
     @State private var began = false
     @State private var commitFailed = false
+    @State private var showingPremium = false
     private func c(_ zh: String, _ en: String) -> String { AlbumCopy.pick(store.appLanguage, zh, en) }
     var body: some View {
         Form {
@@ -237,6 +238,9 @@ struct DreamImportView: View {
                 if targetID == nil {
                     TextField(c("画册名称（最多12字）", "Album name (up to 12 characters)"), text: $title)
                         .onChange(of: title) { _, value in title = String(value.prefix(12)) }.disabled(began)
+                    if !store.canCreateDream {
+                        Button(c("解锁更多画册", "Unlock more albums"), systemImage: "lock") { showingPremium = true }
+                    }
                 }
             }
             Section {
@@ -287,12 +291,14 @@ struct DreamImportView: View {
             if began && !running && importer.failed.isEmpty && !importer.ready.isEmpty { finishImport() }
         }
         .onDisappear { importer.close() }
+        .sheet(isPresented: $showingPremium) { PremiumUnlockSheet(offer: .albums) }
         .alert(c("画册已不可用", "Album unavailable"), isPresented: $commitFailed) {
             Button(c("好", "OK")) { }
         } message: { Text(c("请重新选择画册。", "Choose another album.")) }
         .preferredColorScheme(.light)
     }
     private func finishImport() {
+        guard targetID != nil || store.canCreateDream else { showingPremium = true; return }
         if importer.commit(to: targetID, title: title.trimmingCharacters(in: .whitespacesAndNewlines), store: store) { dismiss() }
         else { commitFailed = true }
     }

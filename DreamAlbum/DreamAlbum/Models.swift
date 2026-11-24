@@ -1,7 +1,7 @@
 import Foundation
 
 enum AppFeatureFlags {
-    static let paidAccessEnabled = false
+    static let paidAccessEnabled = true
 }
 
 enum BackgroundImageChoice: String, Codable, CaseIterable, Identifiable {

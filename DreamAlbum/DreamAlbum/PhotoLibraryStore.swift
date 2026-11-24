@@ -14,16 +14,24 @@ final class PhotoLibraryStore: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var isChanging = false
     @Published var error: String?
+    @Published var premiumAccess: PremiumAccess = .checking
+    @Published private var reviewDay: Date
+    private let now: () -> Date
+    private let calendar: Calendar
     private let defaults: UserDefaults
     private let sessionKey = "dream_album.photo_review.v1"
     private var refreshTask: Task<Void, Never>?
     private var generation = 0
     private var accessRequest: Task<PHAuthorizationStatus, Never>?
 
-    init(service: (any PhotoLibraryService)? = nil, defaults: UserDefaults = .standard) {
+    init(service: (any PhotoLibraryService)? = nil, defaults: UserDefaults = .standard,
+         calendar: Calendar = .autoupdatingCurrent, now: @escaping () -> Date = Date.init) {
         let service = service ?? SystemPhotoLibraryService()
         self.service = service
         self.defaults = defaults
+        self.calendar = calendar
+        self.now = now
+        reviewDay = calendar.startOfDay(for: now())
         authorization = service.authorization
         session = defaults.data(forKey: sessionKey).flatMap { try? JSONDecoder().decode(PhotoReviewSession.self, from: $0) } ?? PhotoReviewSession()
         service.onChange = { [weak self] in self?.scheduleRefresh() }
@@ -85,9 +93,28 @@ final class PhotoLibraryStore: ObservableObject {
     func startReview(_ ids: [String], restart: Bool = false) { session.start(ids, restart: restart); persist() }
     func resumeReview(_ ids: [String]) { session.resume(ids); persist() }
     func restartReview(_ ids: [String]) { session.restartScope(ids); persist() }
-    func decide(_ id: String, delete: Bool) { session.decide(id, delete: delete); persist() }
+    var reviewsRemaining: Int? {
+        premiumAccess.reviewLimit.map { session.reviewsRemaining(on: reviewDay, limit: $0) }
+    }
+
+    func updateReviewDay() {
+        let today = calendar.startOfDay(for: now())
+        if today != reviewDay { reviewDay = today }
+    }
+
+    func submitReview(_ id: String, delete: Bool) -> Bool {
+        updateReviewDay()
+        guard photoByID[id] != nil else { return false }
+        let limit = premiumAccess.reviewLimit
+        // Commit the daily tally and photo decision together.
+        var updated = session
+        guard updated.submitReview(id, delete: delete, day: reviewDay, limit: limit) else { return false }
+        session = updated
+        persist()
+        return true
+    }
     func mark(_ ids: [String]) { for id in ids { session.decide(id, delete: true) }; persist() }
-    func undo() { session.undo(); persist() }
+    func undo() { updateReviewDay(); session.undo(on: reviewDay); persist() }
     func unmark(_ id: String) { session.unmark(id); persist() }
     func clearPending() { session.clearPending(); persist() }
     private func persist() {

@@ -40,6 +40,10 @@ final class DailyInboxFixture: PhotoLibraryService {
             for id in seededIDs where fixture.assets.contains(where: { $0.id == id }) { session.decide(id, delete: false) }
             if arguments.contains("-homeDateTaskFixture") { session.decide("dayDone", delete: true) }
             for photo in fixture.assets where photo.id.hasPrefix("pending-fixture-") { session.decide(photo.id, delete: true) }
+            if arguments.contains("-nearlyUsedReviewQuota") {
+                let day = Calendar.current.startOfDay(for: Date())
+                for _ in 0..<19 { session.submitReview("p0", delete: false, day: day, limit: 20) }
+            }
             defaults.set(try? JSONEncoder().encode(session), forKey: "dream_album.photo_review.v1")
         }
         return PhotoLibraryStore(service: fixture, defaults: defaults)

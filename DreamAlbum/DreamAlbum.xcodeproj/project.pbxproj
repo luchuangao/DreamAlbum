@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		48AD00000000000000000004 /* ProTesting.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 48AD00000000000000000003 /* ProTesting.storekit */; };
 		AABBCC140000000000000001 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBCC140000000000000002 /* AppTheme.swift */; };
 		AABBCC100000000000000001 /* PhotoSortingReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBCC100000000000000002 /* PhotoSortingReminder.swift */; };
 		00B5EE78D0D0B24C2E9AB011 /* DailyPhotoInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B472E0D5E56C8830D98BE4E8 /* DailyPhotoInboxView.swift */; };
@@ -31,6 +32,7 @@
 		ABCDEF000000000000000004 /* DreamAlbumWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000010 /* DreamAlbumWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		ABCDEF000000000000000022 /* ICloudDreamSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF000000000000000023 /* ICloudDreamSync.swift */; };
 		ABCDEF200000000000000001 /* PhotoReviewSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF100000000000000001 /* PhotoReviewSession.swift */; };
+		48AD00000000000000000002 /* PurchaseStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48AD00000000000000000001 /* PurchaseStore.swift */; };
 		ABCDEF200000000000000002 /* PhotoLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF100000000000000002 /* PhotoLibraryService.swift */; };
 		ABCDEF200000000000000003 /* PhotoLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF100000000000000003 /* PhotoLibraryStore.swift */; };
 		ABCDEF200000000000000004 /* PhotoLibraryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCDEF100000000000000004 /* PhotoLibraryViews.swift */; };
@@ -89,6 +91,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		48AD00000000000000000003 /* ProTesting.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = ProTesting.storekit; sourceTree = "<group>"; };
 		AABBCC140000000000000002 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		AABBCC100000000000000002 /* PhotoSortingReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoSortingReminder.swift; sourceTree = "<group>"; };
 		111111111111111111111001 /* DreamAlbumApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DreamAlbumApp.swift; sourceTree = "<group>"; };
@@ -119,6 +122,7 @@
 		ABCDEF000000000000000010 /* DreamAlbumWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DreamAlbumWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		ABCDEF000000000000000023 /* ICloudDreamSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudDreamSync.swift; sourceTree = "<group>"; };
 		ABCDEF100000000000000001 /* PhotoReviewSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoReviewSession.swift; sourceTree = "<group>"; };
+		48AD00000000000000000001 /* PurchaseStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseStore.swift; sourceTree = "<group>"; };
 		ABCDEF100000000000000002 /* PhotoLibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryService.swift; sourceTree = "<group>"; };
 		ABCDEF100000000000000003 /* PhotoLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryStore.swift; sourceTree = "<group>"; };
 		ABCDEF100000000000000004 /* PhotoLibraryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryViews.swift; sourceTree = "<group>"; };
@@ -200,6 +204,7 @@
 				23BB490EA4744B7594C36E6C /* CollageGridTemplate.swift */,
 				17A7B72B1ED5CACBA6BEEFED /* CollageExport.swift */,
 				ABCDEF100000000000000001 /* PhotoReviewSession.swift */,
+				48AD00000000000000000001 /* PurchaseStore.swift */,
 				111111111111111111111002 /* RootView.swift */,
 				111111111111111111111003 /* Models.swift */,
 				111111111111111111111004 /* DreamStore.swift */,
@@ -276,6 +281,7 @@
 			children = (
 				C5D73446817C5459CF549C61 /* CollageTests.swift */,
 				D0D1C592D9687CD9BA7D3138 /* PhotoLibraryTests.swift */,
+				48AD00000000000000000003 /* ProTesting.storekit */,
 			);
 			name = DreamAlbumTests;
 			path = DreamAlbumTests;
@@ -425,6 +431,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				48AD00000000000000000004 /* ProTesting.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -449,6 +456,7 @@
 				8AE0DB975FD04FB68F743F1D /* CollageGridTemplate.swift in Sources */,
 				18A12AC5834A8BBD322AD683 /* CollageExport.swift in Sources */,
 				ABCDEF200000000000000001 /* PhotoReviewSession.swift in Sources */,
+				48AD00000000000000000002 /* PurchaseStore.swift in Sources */,
 				111111111111111111111102 /* RootView.swift in Sources */,
 				111111111111111111111103 /* Models.swift in Sources */,
 				111111111111111111111104 /* DreamStore.swift in Sources */,
@@ -645,7 +653,7 @@
 				"CODE_SIGNING_ALLOWED[sdk=macosx*]" = NO;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbum/DreamAlbum.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 26;
 				DEVELOPMENT_ASSET_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DreamAlbum/Info.plist;
@@ -657,7 +665,7 @@
 					"@executable_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.luchuangao.mengxiangxiangce;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -674,7 +682,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbum/DreamAlbum.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 26;
 				DEVELOPMENT_ASSET_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DreamAlbum/Info.plist;
@@ -686,7 +694,7 @@
 					"@executable_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.luchuangao.mengxiangxiangce;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -767,7 +775,7 @@
 				"CODE_SIGNING_ALLOWED[sdk=macosx*]" = NO;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbumWidget/DreamAlbumWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 26;
 				DEVELOPMENT_TEAM = VFDQL6Z55P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = DreamAlbumWidget/Info.plist;
@@ -778,7 +786,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.luchuangao.mengxiangxiangce.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -796,7 +804,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = DreamAlbumWidget/DreamAlbumWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 26;
 				DEVELOPMENT_TEAM = VFDQL6Z55P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = DreamAlbumWidget/Info.plist;
@@ -807,7 +815,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.luchuangao.mengxiangxiangce.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

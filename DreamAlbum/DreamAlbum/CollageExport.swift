@@ -136,10 +136,13 @@ struct CollageExportView: View {
     @ObservedObject var model: CollageEditorModel
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var store: DreamStore
+    @EnvironmentObject private var purchases: PurchaseStore
     @Environment(\.albumTheme) private var theme
     @Environment(\.dismiss) private var dismiss
     @State private var format = CollageFileFormat.jpeg
     @State private var quality = 2048
+    @State private var showExportPremium = false
+    @State private var showAlbumPremium = false
     @State private var urls: [URL] = []
     @State private var busy = false
     @State private var saving = false
@@ -156,7 +159,16 @@ struct CollageExportView: View {
         Form {
             Section {
                 Picker(c("格式", "Format"), selection: $format) { ForEach(CollageFileFormat.allCases) { Text($0.rawValue).tag($0) } }
-                if model.document.kind != .strip { Picker(c("长边像素", "Long-edge pixels"), selection: $quality) { Text("2048 px").tag(2048); Text("4096 px").tag(4096) } }
+                if model.document.kind != .strip {
+                    Picker(c("长边像素", "Long-edge pixels"), selection: $quality) {
+                        Text("2048 px").tag(2048)
+                        if purchases.access.allowsExport(longEdge: 4096) { Text("4096 px").tag(4096) }
+                    }.accessibilityIdentifier("collage.export.quality")
+                    if !purchases.access.allowsExport(longEdge: 4096) {
+                        Button("4096 px · Pro", systemImage: "lock") { showExportPremium = true }
+                            .accessibilityIdentifier("collage.export.pro")
+                    }
+                }
                 else { Text(c("宽 1440px；横图以高 1440px 拼接。", "1440px wide, or 1440px high for horizontal collages.")).font(.caption) }
                 if model.pages.count > 1 { Text(c("将分为 \(model.pages.count) 张保存，每页最长 16000px。", "Exports \(model.pages.count) pages, up to 16000px each.")) }
             }.disabled(busy || saving)
@@ -186,6 +198,10 @@ struct CollageExportView: View {
             .interactiveDismissDisabled(saving)
             .sheet(isPresented: $sharing) { CollageShareSheet(urls: urls) }
             .sheet(isPresented: $attaching) { NavigationStack { attachForm } }
+            .sheet(isPresented: $showExportPremium) { PremiumUnlockSheet(offer: .export) }
+            .onChange(of: purchases.isPremiumUnlocked) { _, unlocked in
+                if !unlocked, quality == 4096 { task?.cancel(); quality = 2048 }
+            }
             .onChange(of: format) { _, _ in invalidate() }
             .onChange(of: quality) { _, _ in invalidate() }
             .onDisappear { if !sharing && !attaching { task?.cancel(); CollageRenderer.cleanExport(urls) } }
@@ -197,16 +213,22 @@ struct CollageExportView: View {
                 ForEach(store.activeDreams) { Text($0.title).tag(Optional($0.id)) }
             }
             if dreamID == nil { TextField(c("画册名称", "Album name"), text: $title).onChange(of: title) { _, value in title = String(value.prefix(12)) } }
+            if dreamID == nil && !store.canCreateDream {
+                Button(c("解锁更多画册", "Unlock more albums"), systemImage: "lock") { showAlbumPremium = true }
+            }
             Button(c("加入梦想画册", "Add to dream album")) {
                 do { try model.store.attach(urls, to: dreamID, title: title, dreams: store); status = c("已加入画册", "Added to album"); attaching = false }
                 catch { self.error = error.localizedDescription; attaching = false }
             }.disabled(dreamID == nil && (title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !store.canCreateDream))
         }.navigationTitle(c("加入梦想画册", "Add to dream album"))
+            .sheet(isPresented: $showAlbumPremium) { PremiumUnlockSheet(offer: .albums) }
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button(c("取消", "Cancel")) { attaching = false } } }
     }
     private func invalidate() { CollageRenderer.cleanExport(urls); urls = []; status = nil; error = nil }
     private func generate() {
-        guard !busy && !saving else { return }; status = nil; error = nil; busy = true; progress = 0
+        guard !busy && !saving else { return }
+        guard purchases.access.allowsExport(longEdge: quality) else { showExportPremium = true; return }
+        status = nil; error = nil; busy = true; progress = 0
         let doc = model.document, folder = model.store.directory(doc.id), chosenFormat = format, edge = quality
         task = Task {
             defer { busy = false }

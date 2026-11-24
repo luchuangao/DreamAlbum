@@ -350,3 +350,13 @@ The entire template card responds to taps, including the photo preview. The prev
 ## 2026-11-19 — App Store Connect 1.2 preparation (build 25)
 
 The Release archive succeeded for version 1.2, build 25, and its signature verified. The archive uses the available development identity. The first App Store distribution export failed because Xcode reported missing account credentials. After the account was signed in, Xcode distribution signing and upload succeeded. Xcode reported that the uploaded package was processing. The final App Store Connect processing outcome has not been independently verified. Xcode warned that uploads starting in April 2027 will require the iOS 27 SDK or later. The archive and diagnostic logs remain in `.ui-checks/appstore-1.2/`.
+
+## 1.3 Build 26：梦想相册 Pro（2026-11-24）
+
+- 免费版按设备的本地日历日提供 20 次整理判断。滑动、键盘或辅助功能提交保留和待删决定，以及在预览中提交同类判断，均占用额度。当天撤销一次已扣额的判断返还一次。浏览、分组、多选标记、取消待删和处理待删清单保持可用。
+- 免费版最多 4 本活跃画册，支持宫格和标准清晰度导出。Pro 解锁无限整理与活跃画册、其余拼图类型，以及普通拼图 4096 px 导出。已保存的画册和拼图草稿可继续查看、编辑和使用标准清晰度导出。
+- 使用已验证的 App Store AppTransaction 识别曾从 App Store 获取构建 25 或更早版本的用户。Catalyst 同时识别 1.3 之前的 Mac 营销版本。校验失败时仍可使用免费功能，可从付费墙重试连接或恢复权益。
+- iOS 18.6 小屏 iPhone 模拟器跑完 102 项单元测试，100 项通过、2 项既有 PhotoKit 验收因专用测试设备条件跳过。使用本地 StoreKit 完成商品读取、一次性购买、重新创建购买状态后恢复，以及退款后撤销权益；补跑了显式恢复购买路径。
+- iPhone 17 Pro 和 iPad Pro 11 英寸各通过 3 项界面测试，覆盖第 20 次成功、第 21 次保持当前照片、待删清单、撤销返还、英文拼图类型及 4096 px 限制、免费宫格导出、以及「我的」中的老用户权益。截图和结果位于本机 `.ui-checks/paywall-v26/`。iOS 和 Mac Catalyst 的 Release 构建通过。
+- Xcode 的 Debug 运行方案使用 `DreamAlbum/DreamAlbumTests/ProTesting.storekit`。此文件里的 ¥28 为本地测试价。iOS 26.5 的命令行环境未能激活本地 StoreKit 商品，购买链路改在 iOS 18.6 验证。
+- 商店商品 ID 为 `com.luchuangao.mengxiangxiangce.premium`，类型为非消耗型。正式价格以 App Store Connect 为准，App 使用 StoreKit 返回的本地化价格。正式接入需在 App Store Connect 完成商品和定价配置，随后通过 TestFlight 核对商店商品和恢复购买。构建 26 尚未上传或送审。

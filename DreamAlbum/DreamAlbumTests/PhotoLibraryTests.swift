@@ -1,5 +1,7 @@
 import XCTest
 import UserNotifications
+import StoreKit
+import StoreKitTest
 import Photos
 import UIKit
 @testable import DreamAlbum
@@ -293,6 +295,7 @@ final class PhotoLibraryStoreTests: XCTestCase {
         let dreams = DreamStore()
         let before = dreams.dreams
         defer { dreams.dreams = before }
+        dreams.dreams = []
         let importer = DreamPhotoImport()
         importer.run(ids: ["a"], service: service)
         for _ in 0..<300 {
@@ -893,5 +896,131 @@ final class SilverAppearanceTests: XCTestCase {
         for theme in AppTheme.allCases { XCTAssertEqual(AppTheme.resolve(theme.rawValue), theme) }
         XCTAssertEqual(AppTheme.resolve("future-or-missing-theme"), .silver)
         XCTAssertEqual(AppTheme.resolve("iceMint"), .silver)
+    }
+}
+
+
+@MainActor
+final class PremiumAccessTests: XCTestCase {
+    func testCutoverAndSandboxVersion() {
+        XCTAssertTrue(PremiumAccess.qualifiesForLegacyAccess(originalVersion: "25", production: true, catalyst: false))
+        XCTAssertFalse(PremiumAccess.qualifiesForLegacyAccess(originalVersion: "26", production: true, catalyst: false))
+        XCTAssertFalse(PremiumAccess.qualifiesForLegacyAccess(originalVersion: "1.0", production: false, catalyst: false))
+        XCTAssertTrue(PremiumAccess.qualifiesForLegacyAccess(originalVersion: "1.2", production: true, catalyst: true))
+        XCTAssertFalse(PremiumAccess.qualifiesForLegacyAccess(originalVersion: "1.3", production: true, catalyst: true))
+        XCTAssertFalse(PremiumAccess.qualifiesForLegacyAccess(originalVersion: "invalid", production: true, catalyst: true))
+    }
+
+    func testFreeAndUnlockedBenefits() {
+        XCTAssertEqual(PremiumAccess.free.reviewLimit, 20)
+        XCTAssertEqual(CollageKind.allCases.filter { PremiumAccess.free.allows($0) }, [.grid])
+        XCTAssertTrue(PremiumAccess.free.allowsExport(longEdge: 2048))
+        XCTAssertFalse(PremiumAccess.free.allowsExport(longEdge: 4096))
+        for access in [PremiumAccess.legacy, .purchased] {
+            XCTAssertNil(access.reviewLimit)
+            XCTAssertTrue(CollageKind.allCases.allSatisfy { access.allows($0) })
+            XCTAssertTrue(access.allowsExport(longEdge: 4096))
+            XCTAssertFalse(access.canPurchase)
+        }
+    }
+
+    func testActiveAlbumLimitPreservesExistingAndArchivedAlbums() {
+        let store = DreamStore()
+        let original = store.dreams
+        defer { store.dreams = original }
+        store.dreams = []
+        for index in 1...4 { store.addDream(title: "Album \(index)", visionText: "", imagePaths: []) }
+        XCTAssertFalse(store.canCreateDream)
+        store.addDream(title: "At cap", visionText: "", imagePaths: [])
+        XCTAssertEqual(store.activeDreams.count, 4)
+        store.isPremiumUnlocked = true
+        store.addDream(title: "Pro album", visionText: "", imagePaths: [])
+        store.isPremiumUnlocked = false
+        XCTAssertEqual(store.activeDreams.count, 5)
+        let album = store.activeDreams[0]
+        store.archive(album)
+        XCTAssertEqual(store.archivedDreams.first?.id, album.id)
+        store.restore(album)
+        XCTAssertEqual(store.activeDreams.count, 4)
+        store.archive(store.activeDreams[0])
+        store.restore(album)
+        XCTAssertEqual(store.activeDreams.count, 4)
+        XCTAssertTrue(store.activeDreams.contains { $0.id == album.id })
+    }
+
+    func testLocalStoreKitNonConsumablePurchaseAndRefund() async throws {
+        let config = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "ProTesting", withExtension: "storekit"))
+        let session = try SKTestSession(contentsOf: config)
+        session.disableDialogs = true
+        session.clearTransactions()
+        defer { session.clearTransactions() }
+        let purchases = PurchaseStore()
+        await purchases.loadProducts()
+        guard purchases.premiumProduct != nil,
+              case .verified(let receipt) = try? await AppTransaction.shared,
+              receipt.environment == .xcode else {
+            throw XCTSkip("The local StoreKit product configuration is unavailable on this test destination.")
+        }
+        await purchases.refresh()
+        XCTAssertEqual(purchases.access, .free)
+        await purchases.purchasePremium()
+        XCTAssertEqual(purchases.access, .purchased, String(describing: purchases.message))
+        let transaction = try XCTUnwrap(session.allTransactions().first {
+            $0.productIdentifier == PurchaseStore.premiumProductID
+        })
+        let reopened = PurchaseStore()
+        await reopened.restorePurchases()
+        XCTAssertEqual(reopened.access, .purchased)
+        try session.refundTransaction(identifier: transaction.identifier)
+        for _ in 0..<100 {
+            if !reopened.isPremiumUnlocked { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertFalse(reopened.isPremiumUnlocked)
+        let afterRefund = PurchaseStore()
+        await afterRefund.refresh()
+        XCTAssertFalse(afterRefund.isPremiumUnlocked)
+    }
+}
+
+extension PhotoLibraryStoreTests {
+    func testFreeQuotaPersistsAcrossSessionsAndResetsNextDay() async throws {
+        let service = FakePhotoLibrary()
+        var clock = Date()
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+        let store = PhotoLibraryStore(service: service, defaults: defaults, calendar: calendar, now: { clock })
+        store.premiumAccess = .free
+        await store.refresh()
+        store.resumeReview(["a", "b"])
+        XCTAssertFalse(store.submitReview("missing", delete: true))
+        for _ in 0..<20 { XCTAssertTrue(store.submitReview("a", delete: false)) }
+        XCTAssertEqual(store.reviewsRemaining, 0)
+        XCTAssertFalse(store.submitReview("b", delete: true))
+        XCTAssertFalse(store.session.reviewed.contains("b"))
+        let reopened = PhotoLibraryStore(service: service, defaults: defaults, calendar: calendar, now: { clock })
+        reopened.premiumAccess = .free
+        await reopened.refresh()
+        XCTAssertEqual(reopened.reviewsRemaining, 0)
+        reopened.mark(["b"])
+        XCTAssertEqual(reopened.session.pendingDeletion, ["b"])
+        reopened.undo()
+        XCTAssertEqual(reopened.reviewsRemaining, 0)
+        reopened.undo()
+        XCTAssertEqual(reopened.reviewsRemaining, 1)
+        XCTAssertTrue(reopened.submitReview("b", delete: true))
+        reopened.unmark("b")
+        XCTAssertEqual(reopened.reviewsRemaining, 0)
+        XCTAssertFalse(reopened.session.pendingDeletion.contains("b"))
+        clock = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: clock))
+        reopened.updateReviewDay()
+        XCTAssertEqual(reopened.reviewsRemaining, 20)
+        reopened.undo()
+        XCTAssertEqual(reopened.reviewsRemaining, 20)
+        reopened.premiumAccess = .purchased
+        XCTAssertNil(reopened.reviewsRemaining)
+        for _ in 0..<25 { XCTAssertTrue(reopened.submitReview("a", delete: false)) }
+        reopened.premiumAccess = .free
+        XCTAssertEqual(reopened.reviewsRemaining, 20)
     }
 }

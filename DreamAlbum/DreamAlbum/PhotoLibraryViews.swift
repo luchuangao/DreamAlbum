@@ -431,6 +431,7 @@ struct PhotoPreview: View {
     @Environment(\.returnToPhotoHome) private var returnToPhotoHome
     let items: [LibraryPhoto]
     @State private var index = 0
+    @State private var showingReviewLimit = false
     @State private var loaded = false
     @State private var swiping = false
     @State private var destination: LibraryDestination?
@@ -490,6 +491,7 @@ struct PhotoPreview: View {
         .onChange(of: photo?.id) { _, id in
             if id == nil && library.hasAccess { finish() }
         }
+        .sheet(isPresented: $showingReviewLimit) { PremiumUnlockSheet(offer: .review) }
         .preferredColorScheme(.light)
     }
     private func advance(_ id: String) {
@@ -498,7 +500,10 @@ struct PhotoPreview: View {
     }
     private func commitSwipe(_ id: String, delete: Bool) -> Bool {
         guard loaded, !swiping, photo?.id == id else { return false }
-        library.decide(id, delete: delete)
+        guard library.submitReview(id, delete: delete) else {
+            showingReviewLimit = library.reviewsRemaining == 0
+            return false
+        }
         loaded = false; swiping = true
         #if !targetEnvironment(macCatalyst)
         UISelectionFeedbackGenerator().selectionChanged()
@@ -518,6 +523,7 @@ struct PhotoReviewView: View {
     @EnvironmentObject private var store: DreamStore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.returnToPhotoHome) private var returnToPhotoHome
+    @State private var showingReviewLimit = false
     @State private var loaded = false
     @State private var exitingID: String?
     @State private var showPending = false
@@ -550,7 +556,15 @@ struct PhotoReviewView: View {
                     .accessibilityAction { openOriginal(id) }
                     .accessibilityAction(named: c("移至待删", "Mark for deletion")) { decide(id, delete: true) }
                     .accessibilityAction(named: c("留在相册", "Keep photo")) { decide(id, delete: false) }
-                Text(c("左滑待删 · 右滑保留", "Swipe left to mark · right to keep")).font(.caption).foregroundStyle(.secondary).padding(.vertical, 14)
+                if let remaining = library.reviewsRemaining {
+                    Button {
+                        showingReviewLimit = true
+                    } label: {
+                        Text(c("今日剩余 \(remaining) 张", "\(remaining) reviews left today"))
+                    }.buttonStyle(.plain).foregroundStyle(theme.accent).accessibilityIdentifier("review.free.remaining")
+                        .padding(.top, 8)
+                }
+                Text(c("左滑待删 · 右滑保留", "Swipe left to mark · right to keep")).font(.caption).foregroundStyle(.secondary).padding(.vertical, 12)
             } else {
                 ContentUnavailableView(c("整理完成", "Review complete"), systemImage: "checkmark", description: Text(c("可在待删清单中删除原图。", "Open the pending list to delete originals.")))
             }
@@ -593,6 +607,7 @@ struct PhotoReviewView: View {
             }.disabled(!loaded || exitingID != nil || showPending || destination != nil || originalPhoto != nil)
                 .frame(width: 0, height: 0).clipped().opacity(0).accessibilityHidden(true)
         }
+        .sheet(isPresented: $showingReviewLimit) { PremiumUnlockSheet(offer: .review) }
         .preferredColorScheme(.light)
     }
     private func openOriginal(_ id: String) {
@@ -602,9 +617,12 @@ struct PhotoReviewView: View {
     private func commitSwipe(_ id: String, delete: Bool) -> Bool {
         guard loaded, exitingID == nil, current == id, originalPhoto == nil else { return false }
         // Keep the outgoing resource until its native animation completes.
-        // Persist immediately so interruption cannot lose the user's decision.
         exitingID = id
-        library.decide(id, delete: delete)
+        guard library.submitReview(id, delete: delete) else {
+            exitingID = nil
+            showingReviewLimit = library.reviewsRemaining == 0
+            return false
+        }
         #if !targetEnvironment(macCatalyst)
         UISelectionFeedbackGenerator().selectionChanged()
         #endif

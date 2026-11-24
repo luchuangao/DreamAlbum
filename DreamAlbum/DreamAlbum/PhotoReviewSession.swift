@@ -6,11 +6,33 @@ struct PhotoReviewSession: Codable, Equatable {
         var id: String
         var wasReviewed: Bool
         var wasPending: Bool
+        var quotaDay: Date? = nil
     }
     private(set) var queue: [String] = []
     private(set) var reviewed: Set<String> = []
     private(set) var pendingDeletion: Set<String> = []
     private(set) var history: [Decision] = []
+
+    private struct ReviewQuota: Codable, Equatable {
+        let day: Date
+        var used: Int
+    }
+    private var quota: ReviewQuota?
+
+    func reviewsRemaining(on day: Date, limit: Int) -> Int {
+        quota?.day == day ? max(0, limit - (quota?.used ?? 0)) : limit
+    }
+
+    @discardableResult
+    mutating func submitReview(_ id: String, delete: Bool, day: Date, limit: Int?) -> Bool {
+        if let limit {
+            let remaining = reviewsRemaining(on: day, limit: limit)
+            guard remaining > 0 else { return false }
+            quota = ReviewQuota(day: day, used: limit - remaining + 1)
+        }
+        record(id, delete: delete, quotaDay: limit == nil ? nil : day)
+        return true
+    }
 
     var currentID: String? { queue.first { !reviewed.contains($0) } }
     var completedCount: Int { queue.reduce(0) { $0 + (reviewed.contains($1) ? 1 : 0) } }
@@ -38,13 +60,21 @@ struct PhotoReviewSession: Codable, Equatable {
 
     mutating func decide(_ id: String, delete: Bool) {
         guard !reviewed.contains(id) || pendingDeletion.contains(id) != delete else { return }
-        history.append(Decision(id: id, wasReviewed: reviewed.contains(id), wasPending: pendingDeletion.contains(id)))
+        record(id, delete: delete, quotaDay: nil)
+    }
+
+    private mutating func record(_ id: String, delete: Bool, quotaDay: Date?) {
+        history.append(Decision(id: id, wasReviewed: reviewed.contains(id), wasPending: pendingDeletion.contains(id), quotaDay: quotaDay))
         reviewed.insert(id)
         if delete { pendingDeletion.insert(id) } else { pendingDeletion.remove(id) }
     }
 
-    mutating func undo() {
+    mutating func undo(on day: Date? = nil) {
         guard let decision = history.popLast() else { return }
+        if let day, decision.quotaDay == day, var current = quota, current.day == day {
+            current.used = max(0, current.used - 1)
+            quota = current
+        }
         if decision.wasReviewed { reviewed.insert(decision.id) } else { reviewed.remove(decision.id) }
         if decision.wasPending { pendingDeletion.insert(decision.id) } else { pendingDeletion.remove(decision.id) }
     }

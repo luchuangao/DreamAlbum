@@ -17,11 +17,21 @@ struct RootView: View {
             .preferredColorScheme(.light)
             .environment(\.albumTheme, theme)
             .environment(\.albumBackgroundContrast, .light)
-            .task { sortingReminder.refresh(language: store.appLanguage) }
+            .task { sortingReminder.refresh(language: store.appLanguage); await purchaseStore.refresh() }
             .onChange(of: store.appLanguage) { _, value in sortingReminder.refresh(language: value) }
-            .onAppear { store.isPremiumUnlocked = purchaseStore.isPremiumUnlocked }
-            .onChange(of: purchaseStore.isPremiumUnlocked) { _, value in store.isPremiumUnlocked = value }
-            .onChange(of: phase) { _, value in if value == .active { library.scheduleRefresh(); sortingReminder.refresh(language: store.appLanguage) } }
+            .onChange(of: purchaseStore.access, initial: true) { _, access in
+                store.isPremiumUnlocked = access.isUnlocked
+                library.premiumAccess = access
+            }
+            .onChange(of: phase) { _, value in
+                if value == .active {
+                    library.updateReviewDay()
+                    library.scheduleRefresh()
+                    sortingReminder.refresh(language: store.appLanguage)
+                    Task { await purchaseStore.refresh() }
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in library.updateReviewDay() }
     }
 }
 

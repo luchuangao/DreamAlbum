@@ -721,6 +721,71 @@ final class PhotoFlowTests: XCTestCase {
         XCTAssertEqual(visibleButton("review.pending").label, "待删 0")
         capture("swipe-review-with-undo")
     }
+    func testPaywallPreservesPhotoAtDailyLimitAndKeepsPendingAccessible() {
+        app.terminate()
+        app.launchArguments = ["-dailyInboxFixture", "-resetDailyFixture", "-premiumFreeFixture",
+                               "-nearlyUsedReviewQuota", "-dream_album.app_language", "chinese"]
+        app.launch()
+        visibleButton("today.continue").tap()
+        let allowance = visibleButton("review.free.remaining")
+        XCTAssertEqual(allowance.label, "今日剩余 1 张")
+        let accepted = readyReviewPhoto().identifier
+        readyReviewPhoto().swipeLeft()
+        let blocked = readyReviewPhoto().identifier
+        XCTAssertNotEqual(accepted, blocked)
+        XCTAssertEqual(allowance.label, "今日剩余 0 张")
+        readyReviewPhoto().swipeRight()
+        let context = app.staticTexts["premium.context"]
+        XCTAssertTrue(context.waitForExistence(timeout: 10))
+        XCTAssertTrue(context.label.contains("今日 20 张已用完"))
+        XCTAssertTrue(app.buttons["premium.restore"].exists)
+        capture("pro-daily-limit")
+        visibleButton("premium.close").tap()
+        XCTAssertEqual(readyReviewPhoto().identifier, blocked)
+        visibleButton("review.pending").tap()
+        XCTAssertTrue(app.navigationBars["待删清单"].waitForExistence(timeout: 5))
+        visibleButton("完成").tap()
+        visibleButton("撤销").tap()
+        XCTAssertEqual(allowance.label, "今日剩余 1 张")
+        XCTAssertEqual(readyReviewPhoto().identifier, accepted)
+    }
+
+    func testPaywallLocksCollageStyleAnd4096ButKeepsGridExport() {
+        app.terminate()
+        app.launchArguments = ["-dailyInboxFixture", "-resetDailyFixture", "-resetCollageFixture",
+                               "-premiumFreeFixture", "-dream_album.app_language", "english"]
+        app.launch()
+        visibleButton("tab.groups").tap()
+        app.staticTexts["测试分组"].tap()
+        visibleButton("library.collage").tap()
+        visibleButton("collage.kind.strip").tap()
+        let context = app.staticTexts["premium.context"]
+        XCTAssertTrue(context.waitForExistence(timeout: 8))
+        XCTAssertTrue(context.label.contains("Unlock strips"))
+        capture("pro-collage-styles-en")
+        visibleButton("premium.close").tap()
+        visibleButton("collage.kind.grid").tap()
+        visibleButton("collage.photo.p0").tap()
+        visibleButton("collage.photo.s0").tap()
+        visibleButton("collage.photos.confirm").tap()
+        visibleButton("collage.export").tap()
+        visibleButton("collage.export.pro").tap()
+        XCTAssertTrue(context.waitForExistence(timeout: 8))
+        XCTAssertTrue(context.label.contains("4096 px"))
+        visibleButton("premium.close").tap()
+        visibleButton("collage.export.generate").tap()
+        waitEnabled(app.buttons["collage.export.photos"])
+    }
+
+    func testPaywallShowsLegacyAccessInManagement() {
+        launchDailyFixture()
+        visibleButton("tab.me").tap()
+        visibleButton("management.pro").tap()
+        XCTAssertTrue(app.descendants(matching: .any)["premium.unlocked"].firstMatch.waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["premium.buy"].exists)
+        capture("pro-legacy-access")
+    }
+
     func testTodayInboxScopeAndResume() {
         launchDailyFixture()
         XCTAssertTrue(app.staticTexts["today.remaining"].waitForExistence(timeout: 8))

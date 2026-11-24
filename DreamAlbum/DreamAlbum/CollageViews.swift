@@ -5,10 +5,12 @@ struct NewCollageView: View {
     @EnvironmentObject private var library: PhotoLibraryStore
     @EnvironmentObject private var store: DreamStore
     @EnvironmentObject private var collages: CollageStore
+    @EnvironmentObject private var purchases: PurchaseStore
     @Environment(\.albumTheme) private var theme
     @Environment(\.dismiss) private var dismiss
     let groupID: String
     var preselected: [String] = []
+    @State private var showPremium = false
     @State private var kind: CollageKind?
     @State private var ids: [String] = []
     @State private var created: CollageDocument?
@@ -20,7 +22,7 @@ struct NewCollageView: View {
                 if let created { CollageEditor(document: created, workspace: collages, onClose: { dismiss() }) }
                 else if let kind {
                     CollagePhotoPicker(groupID: groupID, selection: $ids, limit: kind.limits, title: kind.title(store.appLanguage)) {
-                        importer.run(ids: ids, kind: kind, groupID: groupID, name: kind.title(store.appLanguage), language: store.appLanguage, service: library.service, store: collages) { created = $0 }
+                        start(kind)
                     }
                     .disabled(importer.running)
                     .overlay { if importer.running { progressPanel } }
@@ -33,10 +35,18 @@ struct NewCollageView: View {
                 } else {
                     List {
                         ForEach(CollageKind.allCases) { value in
-                            Button { kind = value } label: {
+                            Button {
+                                if purchases.access.allows(value) { kind = value }
+                                else { showPremium = true }
+                            } label: {
                                 Label {
                                     VStack(alignment: .leading, spacing: 6) {
-                                        Text(value.title(store.appLanguage)).font(.headline)
+                                        HStack {
+                                            Text(value.title(store.appLanguage)).font(.headline)
+                                            if !purchases.access.allows(value) {
+                                                Label("Pro", systemImage: "lock").font(.caption).foregroundStyle(theme.accent)
+                                            }
+                                        }
                                         Text(c("\(value.limits.lowerBound)–\(value.limits.upperBound) 张照片", "\(value.limits.lowerBound)–\(value.limits.upperBound) photos")).font(.caption).foregroundStyle(theme.secondary)
                                     }.padding(.vertical, 8)
                                 } icon: { Image(systemName: value.symbol).foregroundStyle(theme.accent).frame(width: 32) }
@@ -52,8 +62,10 @@ struct NewCollageView: View {
         .onAppear { ids = preselected }
         .onDisappear { importer.close() }
         .interactiveDismissDisabled(importer.running)
+        .sheet(isPresented: $showPremium) { PremiumUnlockSheet(offer: .collage) }
     }
     private func start(_ kind: CollageKind) {
+        guard purchases.access.allows(kind) else { showPremium = true; return }
         importer.run(ids: ids, kind: kind, groupID: groupID, name: kind.title(store.appLanguage), language: store.appLanguage, service: library.service, store: collages) { created = $0 }
     }
     private var progressPanel: some View {
