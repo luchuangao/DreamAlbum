@@ -364,3 +364,8 @@ The Release archive succeeded for version 1.2, build 25, and its signature verif
 ## 2026-11-24 — App Store Connect 1.3 upload (build 26)
 
 The Release archive for version 1.3 build 26 succeeded, and Xcode successfully uploaded it to App Store Connect using automatic distribution signing. Xcode reported that the uploaded package was processing. An independent check of the final processing status could not be completed because the browser connection timed out. No App Store submission was made. The archive and upload logs are stored locally in `.ui-checks/appstore-1.3/`.
+
+## 1.3 Build 27 — 应用图标黑边修复（2026-11-24）
+
+- 使用延伸至四角的蓝色渐变替换图标原本的黑色圆角背景，保留原有标志设计。图标通过图像生成编辑，标志细节可能与原图略有差异。
+- 确认素材为 1024 × 1024、无透明通道，检查生成图标四角及整体效果，iOS Release 构建通过。尚未安装或上传构建 27，App Store Connect 的构建 26 仍使用旧图标。
